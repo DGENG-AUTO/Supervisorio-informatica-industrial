@@ -1,0 +1,92 @@
+#:kivy 2.0.0
+
+<Modbus_Popup>:
+    title: "Conexão MODBUS"
+    size_hint_x: 0.3
+    size_hint_y: None
+    height: "180dp"
+    auto_dismiss: False
+    BoxLayout:
+        id: layout1
+        orientation: 'vertical'
+        padding: "5dp"
+        spacing: "5dp"
+        MDTextFieldRect:
+            id: entrada_ip
+            hint_text: "Digite o IP"
+            mode: "rectangle"
+            size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1  
+        
+        MDTextFieldRect:
+            id: entrada_porta
+            text: ""
+            hint_text: "Digite o número porta"
+            mode: "rectangle"
+            size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1 
+
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: "10dp"
+            size_hint_y: None
+            height: "40dp"
+
+            MDRaisedButton:
+                text: "Conectar"
+                size_hint_x: 0.5
+                md_bg_color: 0.7, 0.8, 1, 1 
+                text_color: 0, 0, 0, 1  
+            MDRaisedButton:
+                text: "Fechar"
+                size_hint_x: 0.5
+                on_release: root.dismiss()
+                md_bg_color: 0.7, 0.8, 1, 1
+                text_color: 0, 0, 0, 1
+
+
+<Scan_Popup>:
+    title: "Configuração do Scan time"
+    size_hint_x: 0.4
+    size_hint_y: None
+    height: "170dp"
+    auto_dismiss: False    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+        MDTextFieldRect:
+            id: entrada_time
+            text: ""
+            hint_text: "Digite o tempo de varredura [ms]"
+            helper_text_mode: "on_focus"
+            mode: "rectangle"  
+            size_hint_x: 1
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: "10dp"
+            size_hint_y: None
+            height: "40dp"        
+            MDRaisedButton:
+                text: "Confirmar"
+                size_hint_x: 0.5
+                #on_release: 
+                   # app.root._scan_time = int(entrada_time.text)
+                   
+            MDRaisedButton:
+                text: "Fechar"
+                size_hint_x: 0.5
+                on_release: root.dismiss()
+
+
