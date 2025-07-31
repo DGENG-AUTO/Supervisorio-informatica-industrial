@@ -10,8 +10,4 @@ if __name__ =='__main__':
 
 
 
-    """
-        1) Tirar o liga/desliga e por um popup no controle e atuação.  
-        2)Por uma janela com gráficos 
     
-    """

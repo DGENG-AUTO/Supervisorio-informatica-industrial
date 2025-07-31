@@ -14,9 +14,9 @@ class MainWidget(Screen):
         Classe que contrói a interface gráfica do supervisório com imagens,
         botões, caixas de textos, popup e etc...
     """
-    def __init__(self,scan_timemain, **kwargs):
+    def __init__(self,**kwargs):
         """Construtor princial da classe MainWidget."""
-        super().__init__(**kwargs)
+        super().__init__()
         #kwargs será usado para permitir inúmeras passagens de variável de argumentos nomeados,
         #devem ser usados os mesmos nomes para não haver erros ou conflitos
         self._scan_time = kwargs.get('scan_timemain')

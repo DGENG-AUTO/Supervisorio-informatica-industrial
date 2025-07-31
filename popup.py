@@ -38,13 +38,9 @@ class Scan_Popup(Popup):
         """
         super().__init__(**kwargs)
         self._scan_time = scan_time
+        self.ids.entrada_time.text = str(self._scan_time) #Define um valor para a caixa de texto
 
-    def set_time(self):
-        """
-            Método que atribui o valor para caixa de entrada do scan time. Foi usado 
-            para encapsular o valor atribuido para 'self._scan_time'
-         """
-        self.ids.entrada_porta.text = str(self._scan_time) #Define um valor para a caixa de texto
+    
 
 
     
