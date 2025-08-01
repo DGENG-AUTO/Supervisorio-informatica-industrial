@@ -81,8 +81,9 @@
             MDRaisedButton:
                 text: "Confirmar"
                 size_hint_x: 0.5
-                #on_release: 
-                   # app.root._scan_time = int(entrada_time.text)
+                on_release: 
+                    app.root._scan_time = int(entrada_time.text)
+                    #print(app.root._scan_time)
                    
             MDRaisedButton:
                 text: "Fechar"
@@ -90,3 +91,84 @@
                 on_release: root.dismiss()
 
 
+<Atuacao>:
+    title: "Atuação/controle"
+    size_hint_x: 0.5
+    size_hint_y: 0.5
+    auto_dismiss: True
+
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: "10dp"
+        padding: "10dp"
+
+        # Coluna 1 - COMANDO BOMBA D'ÁGUA
+        MDCard:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "10dp"
+            size_hint: None, None
+            size: "220dp", "200dp"
+            md_bg_color: 0.85, 0.85, 0.85, 1  
+            radius: [20, 20, 20, 20]  
+            elevation: 4  
+
+            Label:
+                text: "COMANDO BOMBA D'ÁGUA"
+                halign: "center"
+                color: 0,0,0
+
+            MDRaisedButton:
+                id: bt_liga_motor
+                text: "LIGAR MOTOR"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+            MDRaisedButton:
+                id: bt_desliga_motor
+                text: "DESLIGAR MOTOR"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+            MDRaisedButton:
+                id:bt_reset
+                text: "RESET"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+        # Coluna 2 - TIPO DE PARTIDA
+        MDCard:
+            orientation: "vertical"
+            padding: "12dp"
+            spacing: "10dp"
+            size_hint: None, None
+            size: "220dp", "200dp"
+            md_bg_color: 0.85, 0.85, 0.85, 1  
+            radius: [20, 20, 20, 20]  
+            elevation: 4
+
+            Label:
+                text: "SELECIONAR TIPO DE PARTIDA"
+                halign: "center"
+                color: 0,0,0
+
+            MDRaisedButton:
+                id: bt_pt_direta
+                text: "TESYS DIRETA"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+            MDRaisedButton:
+                id: bt_pt_inversor
+                text: "ATV31 INVERSOR"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+            MDRaisedButton:
+                id: bt_pt_soft
+                text: "ATS48 SOFT-START"
+                pos_hint: {"center_x": 0.5}
+                size_hint_x: 0.8
+
+            
+        

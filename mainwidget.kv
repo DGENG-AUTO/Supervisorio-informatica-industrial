@@ -12,44 +12,25 @@
                         elevation: 2
                         left_action_items: [["menu", lambda x: nav_drawer.set_state("toggle")]]
                         BoxLayout:
-                            orientation: "horizontal"
-                            spacing: "50dp"
-                            padding: "0dp"
-                            size_hint_x: 1
-                            MDRaisedButton:
-                                id: bt_seccionar_motor
-                                text: "[b]LIGAR MOTOR[/b]" 
-                                markup: True  
-                                md_bg_color: 0, 1, 0, 0.6 
-                                size_hint: None, None
-                                size: "120dp", "40dp"
-                            MDRaisedButton:
-                                id: bt_acionar_motor
-                                text: "[b]DESLIGAR MOTOR[/b]"
-                                markup: True   
-                                md_bg_color: 0.90, 0, 0, 1  
-                                size_hint: None, None
-                                size: "120dp", "40dp"
-                            BoxLayout:
-                                orientation: 'vertical'
-                                size_hint: None, None
-                                size: "120dp", "50dp"
-                                spacing: "4dp"
-                                Label:
-                                    id: label_con
-                                    text: "[b]DESCONECTADO[/b]"
-                                    markup: True
-                                    color: (1, 0, 0, 1)
-                                    font_size: "12sp"
-                                    halign: "center"
-                                    size_hint_y: 0.4
+                            orientation: 'vertical'
+                            size_hint: None, None
+                            size: "120dp", "50dp"
+                            spacing: "4dp"
+                            Label:
+                                id: label_con
+                                text: "[b]DESCONECTADO[/b]"
+                                markup: True
+                                color: (1, 0, 0, 1)
+                                font_size: "12sp"
+                                halign: "center"
+                                size_hint_y: 0.4
 
-                                Image:
-                                    id: img_con
-                                    source: "img/con_off.png"
-                                    allow_stretch: True
-                                    keep_ratio: True
-                                    size_hint: (1, 0.6)                                
+                            Image:
+                                id: img_con
+                                source: "img/con_off.png"
+                                allow_stretch: True
+                                keep_ratio: True
+                                size_hint: (1, 0.6)                                
                     FloatLayout:
                         size_hint: (1,1)
                         Image:
@@ -106,288 +87,83 @@
                             pos_hint: {"x": 0.382, "y": 0.395}
                         #---------------CARDS DE DADOS---------------
                         FloatLayout:
-                            CardWidget:
-                                #-----BLOCO DAS TEMPERATURAS-----
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    spacing: "5dp"
-                                    padding: "10dp"
+                            BoxLayout:
+                                orientation: 'vertical'
+                                spacing: "30dp"
+                                padding: "10dp"                                
+                                size_hint: None, None
+                                size: "200dp", "150dp"
+                                pos_hint: {"x": 0.85,"y":0.10}
+                                MDRaisedButton:
                                     size_hint: None, None
                                     size: "200dp", "150dp"
-                                    pos_hint: {"x": 0.37,"y":0.58}
-                                    MDLabel:
-                                        text: "TEMPERATURA"
-                                        halign: "center"
-                                        size_hint_y: None
-                                        height: "15dp"
-                                    MDLabel:
-                                        size_hint_y: None
-                                        height: "20dp"
-                                        color: 1, 1, 1, 1
-                                        id: temp
-                                        text: "XXX °C"
-                                        halign: "center"
-                                        canvas.before:
-                                            Color:
-                                                rgba: (0.165, 0.376, 0.647, 1)
-                                            RoundedRectangle:
-                                                pos: self.pos
-                                                size: self.size
-                                                radius: [12]
-                                    MDRaisedButton:
-                                        id: botao_temp
-                                        text: "[b]Selecionar tipo[/b]"
-                                        markup: True
-                                        on_release: app.list1.menu4.open()                           
+                                    id: botao_comando
+                                    text: "[b]ATUAÇÃO/CONTROLE[/b]"
+                                    on_release:root._j_atuacao.open()
+                                MDRaisedButton:
+                                    size_hint: None, None
+                                    size: "200dp", "150dp"
+                                    id: botao_temperatura
+                                    text: "[b]TEMPERATURA[/b]"
+                                MDRaisedButton:
+                                    size_hint: None, None
+                                    size: "200dp", "150dp"
+                                    id: botao_m_eletrica
+                                    text: "[b]MEDIÇÕES ELÉTRICAS[/b]"
+                            BoxLayout:
+                                orientation: 'vertical'
+                                spacing: "5dp"
+                                padding: "10dp"
+                                size_hint: None, None
+                                size: "200dp", "150dp"
+                                pos_hint: {'x': 0.056,'y':0.56}
+                                MDLabel:
+                                    text: "NÍVEL INFERIOR"
+                                    halign: "center"
+                                    size_hint_y: None
+                                    height: "15dp"
+                                MDLabel:
+                                    size_hint_y: None
+                                    height: "20dp"
+                                    color: 1, 1, 1, 1
+                                    text: "XXX VA"
+                                    halign: "center"
+                                    canvas.before:
+                                        Color:
+                                            rgba: (0.165, 0.376, 0.647, 1)
+                                        RoundedRectangle:
+                                            pos: self.pos
+                                            size: self.size
+                                            radius: [12]
+                            BoxLayout:
+                                orientation: 'vertical'
+                                spacing: "5dp"
+                                padding: "10dp"
+                                size_hint: None, None
+                                size: "200dp", "150dp"
+                                pos_hint: {'x': 0.6,'y':0.90}
+                                MDLabel:
+                                    text: "NÍVEL SUPERIOR"
+                                    halign: "center"
+                                    size_hint_y: None
+                                    height: "15dp"
+                                MDLabel:
+                                    size_hint_y: None
+                                    height: "20dp"
+                                    color: 1, 1, 1, 1
+                                    text: "XXX VA"
+                                    halign: "center"
+                                    canvas.before:
+                                        Color:
+                                            rgba: (0.165, 0.376, 0.647, 1)
+                                        RoundedRectangle:
+                                            pos: self.pos
+                                            size: self.size
+                                            radius: [12]
                                     
-                                #BLOCO DAS MEDIDAS ELÉTRICAS
-                                BoxLayout:
-                                    orientation: 'horizontal'
-                                    spacing: "10dp"
-                                    padding: "2dp"
-                                    size_hint: None, None
-                                    size: self.minimum_size
-                                    pos_hint: {"x": 0.37,"y":0.26}
-                                    #CORRENTE
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "CORRENTE"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX A"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
-                                        MDRaisedButton:
-                                            id: botao_corrente
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu1.open()
-                                    #TENSÃO
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "TENSÃO DE LINHA"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX V"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
+                                        
 
-                                        MDRaisedButton:
-                                            id: botao_tensao
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu2.open()
-                                    # BLOCO THD
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "THD DE TENSÃO"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX A"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
-                                        MDRaisedButton:
-                                            id: botao_thd_tensao
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu3.open() 
-                                #BLOCO DAS POTÊNCIAS
-                                BoxLayout:
-                                    orientation: 'horizontal'
-                                    spacing: "10dp"
-                                    padding: "2dp"
-                                    size_hint: None, None
-                                    size: self.minimum_size
-                                    pos_hint: {"x": 0.37,"y":0.10}
-                                    #POTENCIA ATIVA
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "POTÊNCIA ATIVA"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX A"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
-                                        MDRaisedButton:
-                                            id: botao_pt_ativa
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu5.open()
-                                    #POTÊNCIA REATIVA
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "POTÊNCIA REATIVA"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX VAR"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
-
-                                        MDRaisedButton:
-                                            id: botao_pt_reativa
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu6.open()
-                                    # POTENCIA APARENTE
-                                    BoxLayout:
-                                        orientation: 'vertical'
-                                        spacing: "5dp"
-                                        padding: "10dp"
-                                        size_hint: None, None
-                                        size: "200dp", "150dp"
-                                        MDLabel:
-                                            text: "POTÊNCIA APARENTE"
-                                            halign: "center"
-                                            size_hint_y: None
-                                            height: "15dp"
-                                        MDLabel:
-                                            size_hint_y: None
-                                            height: "20dp"
-                                            color: 1, 1, 1, 1
-                                            text: "XXX VA"
-                                            halign: "center"
-                                            canvas.before:
-                                                Color:
-                                                    rgba: (0.165, 0.376, 0.647, 1)
-                                                RoundedRectangle:
-                                                    pos: self.pos
-                                                    size: self.size
-                                                    radius: [12]
-                                        MDRaisedButton:
-                                            id: botao_pt_aparente
-                                            text: "[b]Selecionar tipo[/b]"
-                                            markup: True
-                                            on_release: app.list1.menu7.open()
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    spacing: "5dp"
-                                    padding: "10dp"
-                                    size_hint: None, None
-                                    size: "200dp", "150dp"
-                                    pos_hint: {'x': 0.056,'y':0.56}
-                                    MDLabel:
-                                        text: "NÍVEL INFERIOR"
-                                        halign: "center"
-                                        size_hint_y: None
-                                        height: "15dp"
-                                    MDLabel:
-                                        size_hint_y: None
-                                        height: "20dp"
-                                        color: 1, 1, 1, 1
-                                        text: "XXX VA"
-                                        halign: "center"
-                                        canvas.before:
-                                            Color:
-                                                rgba: (0.165, 0.376, 0.647, 1)
-                                            RoundedRectangle:
-                                                pos: self.pos
-                                                size: self.size
-                                                radius: [12]
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    spacing: "5dp"
-                                    padding: "10dp"
-                                    size_hint: None, None
-                                    size: "200dp", "150dp"
-                                    pos_hint: {'x': 0.6,'y':0.90}
-                                    MDLabel:
-                                        text: "NÍVEL SUPERIOR"
-                                        halign: "center"
-                                        size_hint_y: None
-                                        height: "15dp"
-                                    MDLabel:
-                                        size_hint_y: None
-                                        height: "20dp"
-                                        color: 1, 1, 1, 1
-                                        text: "XXX VA"
-                                        halign: "center"
-                                        canvas.before:
-                                            Color:
-                                                rgba: (0.165, 0.376, 0.647, 1)
-                                            RoundedRectangle:
-                                                pos: self.pos
-                                                size: self.size
-                                                radius: [12]
+                            
                                 
 
         #MENU LATERAL
@@ -426,11 +202,6 @@
                             on_release: root._j_scanPopup.open()
                             IconLeftWidget:
                                 icon: "wrench-clock"
-                        OneLineIconListItem:
-                            text: "Atuação/controle"
-                            id: bt_control
-                            IconLeftWidget:
-                                icon: "controller"
                         OneLineIconListItem:
                             text: "Configurações"
                             id: bt_setting

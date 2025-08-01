@@ -1,4 +1,4 @@
-from kivymd.uix.menu import MDDropdownMenu
+"""from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.list import OneLineListItem
 
 class Botton_list():
@@ -182,6 +182,6 @@ class Botton_list():
 
     def pot_aparente(self, texto7):
         self.root.ids.botao_pt_aparente.text = texto7
-        self.menu7.dismiss()
+        self.menu7.dismiss()"""
 
     

@@ -19,10 +19,10 @@ class Modbus_Popup(Popup):
         super().__init__(**kwargs)
         self.ip = ip
         self.porta = porta
+        self.ids.entrada_ip.text = str(self.ip)     #Define um valor para a caixa de texto
+        self.ids.entrada_porta.text = str(self.porta)   #Define um valor para a caixa de texto
     
-    def set_modbus(self):
-        self.ids.entrada_ip.text = str(self.ip)
-        self.ids.entrada_porta.text = str(self.porta)
+        
 
 class Scan_Popup(Popup):
     """
@@ -39,6 +39,13 @@ class Scan_Popup(Popup):
         super().__init__(**kwargs)
         self._scan_time = scan_time
         self.ids.entrada_time.text = str(self._scan_time) #Define um valor para a caixa de texto
+
+class Atuacao(Popup):
+    """
+        Classe que irá abrir a janela do comando do motor
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     
 
