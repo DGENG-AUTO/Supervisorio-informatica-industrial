@@ -3,7 +3,7 @@
 <Modbus_Popup>:
     title: "Conexão MODBUS"
     size_hint_x: 0.3
-    size_hint_y: None
+    size_hint_y: 0.25
     height: "180dp"
     auto_dismiss: False
     BoxLayout:
@@ -44,7 +44,10 @@
                 text: "Conectar"
                 size_hint_x: 0.5
                 md_bg_color: 0.7, 0.8, 1, 1 
-                text_color: 0, 0, 0, 1  
+                text_color: 0, 0, 0, 1
+                on_release:
+                    app.root.start_atendimento(entrada_ip.text,int(entrada_porta.text)) 
+                    print(app.root.start_atendimento) 
             MDRaisedButton:
                 text: "Fechar"
                 size_hint_x: 0.5

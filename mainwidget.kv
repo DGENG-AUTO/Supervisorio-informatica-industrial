@@ -159,13 +159,7 @@
                                         RoundedRectangle:
                                             pos: self.pos
                                             size: self.size
-                                            radius: [12]
-                                    
-                                        
-
-                            
-                                
-
+                                            radius: [12] 
         #MENU LATERAL
         MDNavigationDrawer:
             md_bg_color: 0.83, 0.84, 0.9
@@ -193,13 +187,13 @@
                         OneLineIconListItem:
                             text: "Conexão MODBUS"
                             id: bt_conection
-                            on_release: root._j_modbusPopup.open()
+                            on_release: root.abrir_fechar_janela(1)
                             IconLeftWidget:
                                 icon: "contactless-payment"
                         OneLineIconListItem:
                             text: "Scan time"
                             id: bt_time
-                            on_release: root._j_scanPopup.open()
+                            on_release: root.abrir_fechar_janela(2)
                             IconLeftWidget:
                                 icon: "wrench-clock"
                         OneLineIconListItem:

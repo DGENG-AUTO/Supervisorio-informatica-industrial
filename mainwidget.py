@@ -5,15 +5,17 @@ from kivy.core.window import Window
 from kivy.lang.builder import Builder
 from popup import Modbus_Popup, Scan_Popup, Atuacao
 from pyModbusTCP.client import ModbusClient
-
-
-
+from threading import Thread
+from time import sleep
+from kivy.clock import Clock
 
 class MainWidget(Screen):
     """
         Classe que contrói a interface gráfica do supervisório com imagens,
         botões, caixas de textos, popup e etc...
     """
+    _update_thread = None
+    _atualiza = True
     def __init__(self,**kwargs):
         """Construtor princial da classe MainWidget."""
         super().__init__()
@@ -30,17 +32,81 @@ class MainWidget(Screen):
         self._j_atuacao = Atuacao()
 
         #criando a conexão MODBUS-TCP
+        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
+    
+    def abrir_fechar_janela(self,ref):
+        """
+            Método que abrirá o popup Modbus_Popup e Scan_Popup e fechará a barra lateral
+            afim de que não haja poluição visual na tela
+
+            Parâmetro:
+            ref (int): Parâmetro que definirá qual janela será popup
+        """
+        if ref == 1:
+            self._j_modbusPopup.open()
+            self.ids.nav_drawer.set_state("close")
+        elif ref == 2:
+            self._j_scanPopup.open()
+            self.ids.nav_drawer.set_state("close")
+
         
+    def start_atendimento(self,ip_digitado,porta_digitado):
+        """
+            Método que inicia a conexão do servidor, configura o endereço de ip
+            e a porta de CLP. Além disso inicia um thread para leitura de dados
+            e atualização de imagens da interfaces gráficas"""
+        
+        #DANDO OS VALORES PARA AS VARIÁVEIS
+        self._ip = ip_digitado
+        self._porta = porta_digitado
+        self._modbusCliente.host = self._ip
+        self._modbusCliente.port = self._porta
+
+        try:
+            Window.set_system_cursor('wait')
+            self._modbusCliente.open() #CONECTANDO AO SERVIDOR
+            Window.set_system_cursor('arrow')
+
+            if (self._modbusCliente.is_open):
+                self._update_thread = Thread(target=self.update)
+                self._update_thread.start()
+                self.ids.img_con.source = "img/con_on.png"
+                self.ids.label_con.color = (0, 1, 0, 1)
+                self.ids.label_con.text = "[b]CONECTADO[/b]"
+                self._j_modbusPopup.dismiss()
+            else:
+                self._j_modbusPopup.set_aviso("Falha na conexão com o servidor.") 
+                    
+        except Exception as erro:
+            self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}")  
+
+    def update(self):
+        """
+            Método que mostrará as rotinas de leitura de dados, atualização da interface
+            e inserção de dados no banco de dados
+        """
+        try:
+            while self._atualiza:
+                try:
+                    # Tente ler algo do servidor
+                    resultado = self._modbusCliente.read_holding_registers(0, 1)
+                    if resultado is None:
+                        raise Exception("Sem resposta do servidor")
+                    # Atualize a interface normalmente
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_on.png"))
+                except Exception as erro:
+                    self._modbusCliente.close()
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
+                    Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
+                    Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
+                    Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
+                    self._atualiza = False
+                sleep(self._scan_time / 1000)
+        except Exception as erro:
+            Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}"))
+        
+          
    
-
-
-class CardWidget(Screen):
-    """
-        Classe que armazena dados como corrente, tensão, velocidade etc...
-    """
-    pass    
-
-
 class MainWidgetApp(MDApp):
     """
         Classe principal de desing da aplicação KivyMD.
@@ -57,5 +123,5 @@ class MainWidgetApp(MDApp):
         self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
-   
-    
+
+
