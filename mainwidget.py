@@ -8,6 +8,7 @@ from pyModbusTCP.client import ModbusClient
 from threading import Thread
 from time import sleep
 from kivy.clock import Clock
+from biblioteca_tags import Biblioteca_tags
 
 class MainWidget(Screen):
     """
@@ -26,14 +27,19 @@ class MainWidget(Screen):
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
 
+        #BIBLIOTECA DAS TAGS
+        self._tags = Biblioteca_tags()
+        
+
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
-        self._j_atuacao = Atuacao()
+        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
-    
+        self.estado_motor = None
+
     def abrir_fechar_janela(self,ref):
         """
             Método que abrirá o popup Modbus_Popup e Scan_Popup e fechará a barra lateral
@@ -49,12 +55,24 @@ class MainWidget(Screen):
             self._j_scanPopup.open()
             self.ids.nav_drawer.set_state("close")
 
+    def encontrar_tag(self,nome_tag):
+        """
+            Método que buscará as tags
+        """
+        for tag in self._tags:
+            if tag['nome'] == nome_tag:
+                return tag['address']
+        
+    
+
+
         
     def start_atendimento(self,ip_digitado,porta_digitado):
         """
             Método que inicia a conexão do servidor, configura o endereço de ip
             e a porta de CLP. Além disso inicia um thread para leitura de dados
-            e atualização de imagens da interfaces gráficas"""
+            e atualização de imagens da interfaces gráficas
+        """
         
         #DANDO OS VALORES PARA AS VARIÁVEIS
         self._ip = ip_digitado
@@ -64,7 +82,8 @@ class MainWidget(Screen):
 
         try:
             Window.set_system_cursor('wait')
-            self._modbusCliente.open() #CONECTANDO AO SERVIDOR
+            #CONECTANDO AO SERVIDOR
+            self._modbusCliente.open() 
             Window.set_system_cursor('arrow')
 
             if (self._modbusCliente.is_open):
@@ -88,12 +107,12 @@ class MainWidget(Screen):
         try:
             while self._atualiza:
                 try:
-                    # Tente ler algo do servidor
-                    resultado = self._modbusCliente.read_holding_registers(0, 1)
-                    if resultado is None:
-                        raise Exception("Sem resposta do servidor")
-                    # Atualize a interface normalmente
-                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_on.png"))
+                    self.estado_motor = self._modbusCliente.read_coils(800, 1)
+                    if self.estado_motor and self.estado_motor[0] == 1:
+                        print("Motor ligado")
+                        Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_on.png"))
+                    else:
+                        print("Motor desligado")
                 except Exception as erro:
                     self._modbusCliente.close()
                     Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
@@ -104,6 +123,7 @@ class MainWidget(Screen):
                 sleep(self._scan_time / 1000)
         except Exception as erro:
             Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}"))
+
         
           
    
@@ -114,7 +134,7 @@ class MainWidgetApp(MDApp):
         Esta classe herda de MDApp e é responsável por configurar e iniciar
         a interface gráfica do supervisório. Ou seja ela define a estrutura principal
         da aplicação, incluindo a inicialização de temas e a construção da tela.
-    """ 
+    """     
     def build(self):
         """Método que gera a janela matriz do Widget principal"""
         self.theme_cls.theme_style = 'Light'

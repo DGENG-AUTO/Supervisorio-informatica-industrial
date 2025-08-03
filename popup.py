@@ -2,6 +2,7 @@ from kivy.uix.popup import Popup
 from kivymd.app import MDApp
 from kivy.uix.label import Label
 from kivy.clock import Clock
+from pyModbusTCP.client import ModbusClient
 
 
 class Modbus_Popup(Popup):
@@ -23,6 +24,7 @@ class Modbus_Popup(Popup):
         self.porta = porta
         self.ids.entrada_ip.text = str(self.ip)     #Define um valor para a caixa de texto ip
         self.ids.entrada_porta.text = str(self.porta)   #Define um valor para a caixa de texto porta
+        self.estado_motor = None
     
     def set_aviso(self, mensagem):
         """
@@ -43,10 +45,6 @@ class Modbus_Popup(Popup):
         if self._aviso_lb is not None:
             self.ids.layout1.remove_widget(self._aviso_lb)
             self._aviso_lb = None
-
-
-    
-
         
 
 class Scan_Popup(Popup):
@@ -70,7 +68,24 @@ class Atuacao(Popup):
         Classe que irá abrir a janela do comando do motor
     """
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
+        self._ip = kwargs.get('ipmain')
+        self._porta = kwargs.get('portamain')
+
+        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta)
+
+    def liga_desliga_motor(self, addrs):
+        estado = self._modbusCliente.read_coils(addrs, 1)
+        if estado and estado[0] == 0:
+            self._modbusCliente.write_single_coil(addrs, 1)
+            print("Ligando motor...")
+        elif estado and estado[0] == 1:
+            self._modbusCliente.write_single_coil(addrs, 0)
+            print("Desligando motor...")
+        else:
+            print("Erro ao acessar motor.")
+        return estado
+
 
 
 
