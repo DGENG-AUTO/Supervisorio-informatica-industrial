@@ -1,6 +1,5 @@
 from mainwidget import MainWidgetApp
 from kivy.lang.builder import Builder
-import popup
 
 if __name__ =='__main__':
     ativa = MainWidgetApp()

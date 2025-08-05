@@ -17,8 +17,11 @@ class MainWidget(Screen):
     """
     _update_thread = None
     _atualiza = True
+
     def __init__(self,**kwargs):
-        """Construtor princial da classe MainWidget."""
+        """
+            Construtor princial da classe MainWidget.
+        """
         super().__init__()
 
         #kwargs será usado para permitir inúmeras passagens de variável de argumentos nomeados,
@@ -38,7 +41,7 @@ class MainWidget(Screen):
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
-        self.estado_motor = None
+    
 
     def abrir_fechar_janela(self,ref):
         """
@@ -62,57 +65,65 @@ class MainWidget(Screen):
         for tag in self._tags:
             if tag['nome'] == nome_tag:
                 return tag['address']
-        
+
     
 
 
-        
-    def start_atendimento(self,ip_digitado,porta_digitado):
+    def start_atendimento(self, ip_digitado, porta_digitado):
         """
             Método que inicia a conexão do servidor, configura o endereço de ip
-            e a porta de CLP. Além disso inicia um thread para leitura de dados
-            e atualização de imagens da interfaces gráficas
+            e a porta de CLP. Além disso inicia uma thread para leitura de dados
+            e atualização de imagens da interface gráfica.
         """
-        
-        #DANDO OS VALORES PARA AS VARIÁVEIS
         self._ip = ip_digitado
         self._porta = porta_digitado
         self._modbusCliente.host = self._ip
         self._modbusCliente.port = self._porta
+        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
 
         try:
             Window.set_system_cursor('wait')
-            #CONECTANDO AO SERVIDOR
-            self._modbusCliente.open() 
+            self._modbusCliente.open()
             Window.set_system_cursor('arrow')
 
-            if (self._modbusCliente.is_open):
-                self._update_thread = Thread(target=self.update)
-                self._update_thread.start()
+            if self._modbusCliente.is_open:
+                self._atualiza = True
+                self.estado_motor = None
                 self.ids.img_con.source = "img/con_on.png"
                 self.ids.label_con.color = (0, 1, 0, 1)
                 self.ids.label_con.text = "[b]CONECTADO[/b]"
                 self._j_modbusPopup.dismiss()
+
+                #EVITAR MULTIPLAS THREADS DE MESMO TRABALHO
+                if self._update_thread is None or not self._update_thread.is_alive():
+                    self._update_thread = Thread(target=self.update)
+                    self._update_thread.start()
             else:
-                self._j_modbusPopup.set_aviso("Falha na conexão com o servidor.") 
-                    
+                self._j_modbusPopup.set_aviso("Falha na conexão com o servidor.")
         except Exception as erro:
-            self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}")  
+            self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}")
+
 
     def update(self):
         """
-            Método que mostrará as rotinas de leitura de dados, atualização da interface
-            e inserção de dados no banco de dados
+            Método que fará leitura periódica e atualização da interface
+            com base na conectividade com o CLP via Modbus.
         """
         try:
             while self._atualiza:
                 try:
+                    resultado = self._modbusCliente.read_holding_registers(0, 1)
+                    if resultado is None:
+                        raise Exception("Sem resposta do servidor")
+                    
                     self.estado_motor = self._modbusCliente.read_coils(800, 1)
                     if self.estado_motor and self.estado_motor[0] == 1:
                         print("Motor ligado")
                         Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_on.png"))
                     else:
                         print("Motor desligado")
+
+
                 except Exception as erro:
                     self._modbusCliente.close()
                     Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
@@ -120,13 +131,15 @@ class MainWidget(Screen):
                     Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
                     Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
                     self._atualiza = False
+
                 sleep(self._scan_time / 1000)
         except Exception as erro:
             Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}"))
+        finally:
+            #SERVIRÁ PARA LIBERÁ O ESPAÇO NA MEMÓRIA PARA CRIA UMA NOVA THREAD PARA CONEXÃO FURURAS
+            self._update_thread = None
 
-        
-          
-   
+
 class MainWidgetApp(MDApp):
     """
         Classe principal de desing da aplicação KivyMD.
@@ -143,5 +156,3 @@ class MainWidgetApp(MDApp):
         self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
-
-

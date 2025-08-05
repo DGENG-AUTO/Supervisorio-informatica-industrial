@@ -126,13 +126,14 @@
                 text: "LIGAR MOTOR"
                 pos_hint: {"center_x": 0.5}
                 size_hint_x: 0.8
-                on_release: root.liga_desliga_motor(800)
+                on_release: root.liga_desliga_motor(800,1)
 
             MDRaisedButton:
                 id: bt_desliga_motor
                 text: "DESLIGAR MOTOR"
                 pos_hint: {"center_x": 0.5}
                 size_hint_x: 0.8
+                on_release: root.liga_desliga_motor(800,0)
 
             MDRaisedButton:
                 id:bt_reset

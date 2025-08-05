@@ -72,14 +72,16 @@ class Atuacao(Popup):
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
 
-        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta)
+        self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
-    def liga_desliga_motor(self, addrs):
-        estado = self._modbusCliente.read_coils(addrs, 1)
-        if estado and estado[0] == 0:
+    def liga_desliga_motor(self, addrs, estado):
+        
+        
+        if (estado == 1):
             self._modbusCliente.write_single_coil(addrs, 1)
             print("Ligando motor...")
-        elif estado and estado[0] == 1:
+
+        elif (estado == 0):
             self._modbusCliente.write_single_coil(addrs, 0)
             print("Desligando motor...")
         else:
