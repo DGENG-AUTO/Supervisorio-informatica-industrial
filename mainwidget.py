@@ -3,7 +3,7 @@ from kivymd.uix.boxlayout import BoxLayout
 from kivymd.uix.screen import Screen
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
-from popup import Modbus_Popup, Scan_Popup, Atuacao
+from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao
 from pyModbusTCP.client import ModbusClient
 from threading import Thread
 from time import sleep
@@ -31,13 +31,14 @@ class MainWidget(Screen):
         self._porta = kwargs.get('portamain')
 
         #BIBLIOTECA DAS TAGS
-        self._tags = Biblioteca_tags()
+        #self._tags = Biblioteca_tags()
         
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
         self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
+        self._j_medidas = Medicao(ipmain=self._ip, portamain=self._porta)
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
@@ -119,7 +120,7 @@ class MainWidget(Screen):
                     self.estado_motor = self._modbusCliente.read_coils(800, 1)
                     if self.estado_motor and self.estado_motor[0] == 1:
                         print("Motor ligado")
-                        Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_on.png"))
+                        
                     else:
                         print("Motor desligado")
 

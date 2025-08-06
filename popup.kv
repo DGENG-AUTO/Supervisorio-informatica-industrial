@@ -95,145 +95,725 @@
 
 
 <Atuacao>:
-    title: "Atuação/controle"
-    size_hint_x: 0.47
-    size_hint_y: 0.42
+    size_hint: 0.5, 0.55  
     auto_dismiss: True
+    background_color: 0, 0, 0, 0.3  
 
     BoxLayout:
-        orientation: 'horizontal'
-        spacing: "10dp"
+        orientation: 'vertical'
         padding: "10dp"
+        spacing: "10dp"
 
-        # Coluna 1 - COMANDO BOMBA D'ÁGUA
-        MDCard:
-            orientation: "vertical"
-            padding: "12dp"
+        MDTopAppBar:
+            title: 'Atuação/Controle'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+    
+
+        BoxLayout:
+            orientation: 'horizontal'
             spacing: "10dp"
-            size_hint: None, None
-            size: "220dp", "260dp"
-            md_bg_color: 0.85, 0.85, 0.85, 1  
-            radius: [20, 20, 20, 20]  
-            elevation: 4  
+            padding: "10dp"
 
-            Label:
-                text: "COMANDO BOMBA D'ÁGUA"
-                halign: "center"
-                color: 0,0,0
+            # Coluna 1 - COMANDO BOMBA D'ÁGUA
+            MDCard:
+                orientation: "vertical"
+                padding: "12dp"
+                spacing: "10dp"
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1  
+                radius: [20, 20, 20, 20]  
+                elevation: 4  
 
-            MDRaisedButton:
-                id: bt_liga_motor
-                text: "LIGAR MOTOR"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
-                on_release: root.liga_desliga_motor(800,1)
+                Label:
+                    text: "COMANDO BOMBA D'ÁGUA"
+                    halign: "center"
+                    color: 0,0,0
 
-            MDRaisedButton:
-                id: bt_desliga_motor
-                text: "DESLIGAR MOTOR"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
-                on_release: root.liga_desliga_motor(800,0)
+                MDRaisedButton:
+                    id: bt_liga_motor
+                    text: "LIGAR MOTOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
+                    on_release: root.controla_partida(1)
 
-            MDRaisedButton:
-                id:bt_reset
-                text: "RESET"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
+                MDRaisedButton:
+                    id: bt_desliga_motor
+                    text: "DESLIGAR MOTOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
+                    on_release: root.controla_partida(0) 
 
-        # Coluna 2 - TIPO DE PARTIDA
-        MDCard:
-            orientation: "vertical"
-            padding: "12dp"
-            spacing: "10dp"
-            size_hint: None, None
-            size: "220dp", "260dp"
-            md_bg_color: 0.85, 0.85, 0.85, 1  
-            radius: [20, 20, 20, 20]  
-            elevation: 4
+                MDRaisedButton:
+                    id:bt_reset
+                    text: "RESET"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
 
-            Label:
-                text: "SELECIONAR TIPO DE PARTIDA"
-                halign: "center"
-                color: 0,0,0
+            # Coluna 2 - TIPO DE PARTIDA
+            MDCard:
+                orientation: "vertical"
+                padding: "12dp"
+                spacing: "10dp"
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1  
+                radius: [20, 20, 20, 20]  
+                elevation: 4
 
-            MDRaisedButton:
-                id: bt_pt_direta
-                text: "TESYS DIRETA"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
+                Label:
+                    text: "SELECIONAR TIPO DE PARTIDA"
+                    halign: "center"
+                    color: 0,0,0
 
-            MDRaisedButton:
-                id: bt_pt_inversor
-                text: "ATV31 INVERSOR"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
-
-            MDRaisedButton:
-                id: bt_pt_soft
-                text: "ATS48 SOFT-START"
-                pos_hint: {"center_x": 0.5}
-                size_hint_x: 0.8
-        
-        # Coluna 3 - MUDANÇA DE VELOCIDADE
-        MDCard:
-            orientation: "vertical"
-            padding: "16dp"
-            spacing: "12dp"
-            size_hint: None, None
-            size: "220dp", "260dp"
-            md_bg_color: 0.85, 0.85, 0.85, 1
-            radius: [20, 20, 20, 20]
-            elevation: 4
-
-            Label:
-                text: "MUDANÇA DE VELOCIDADE"
-                halign: "center"
-                color: 0,0,0
-
-            BoxLayout:
-                orientation: "horizontal"
+                MDRaisedButton:
+                    id: bt_pt_direta
+                    text: "TESYS DIRETA"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
+                    on_release: root.selecionar_partida(1324,3)
+                MDRaisedButton:
+                    id: bt_pt_inversor
+                    text: "ATV31 INVERSOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
+                    on_release: root.selecionar_partida(1324,2)
+                MDRaisedButton:
+                    id: bt_pt_soft
+                    text: "ATS48 SOFT-START"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.8
+                    on_release: root.selecionar_partida(1324,1)
+            
+            # Coluna 3 - MUDANÇA DE VELOCIDADE
+            MDCard:
+                orientation: "vertical"
+                padding: "16dp"
                 spacing: "12dp"
-                size_hint_y: None
-                height: "120dp"
-                # Slider à esquerda, campos à direita
-                MDSlider:
-                    id: slider_velocidade
-                    min: 0
-                    max: 60
-                    value: 0
-                    orientation: 'vertical'
-                    size_hint_x: None
-                    width: "20dp"
-                    height: "180dp"
-                    pos_hint: {"center_y": 0.5}
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1
+                radius: [20, 20, 20, 20]
+                elevation: 4
+
+                Label:
+                    text: "MUDANÇA DE VELOCIDADE"
+                    halign: "center"
+                    color: 0,0,0
 
                 BoxLayout:
-                    orientation: "vertical"
-                    spacing: "8dp"
-                    size_hint_x: 1
-                    MDTextField:
-                        id: entrada_acel
-                        text:""
-                        hint_text: "Aceleração (s)"
-                        mode: "rectangle"
-                        size_hint_y: None
-                        height: "36dp"
-                    MDTextField:
-                        id: entrada_decel
-                        text:""
-                        hint_text: "Desaceleração (s)"
-                        mode: "rectangle"
-                        size_hint_y: None
-                        height: "36dp"
+                    orientation: "horizontal"
+                    id: coluna_velocidade
+                    opacity: 0
+                    disable: True
+                    spacing: "12dp"
+                    size_hint_y: None
+                    height: "120dp"
+                    
+                    MDSlider:
+                        id: slider_velocidade
+                        opacity: 0
+                        disable: True
+                        min: 0
+                        max: 60
+                        value: 0
+                        orientation: 'vertical'
+                        size_hint_x: None
+                        width: "20dp"
+                        height: "180dp"
+                        pos_hint: {"center_y": 0.5}
+                        on_value: root.rampa_velocidade(int(self.value))
+                    BoxLayout:
+                        orientation: "vertical"
+                        spacing: "8dp"
+                        size_hint_x: 1
+                        MDTextField:
+                            id: entrada_acel
+                            text:""
+                            hint_text: "Aceleração (s)"
+                            mode: "rectangle"
+                            size_hint_y: None
+                            height: "36dp"
+                        MDTextField:
+                            id: entrada_decel
+                            text:""
+                            hint_text: "Desaceleração (s)"
+                            mode: "rectangle"
+                            size_hint_y: None
+                            height: "36dp"
 
-            Label:
-                text: f"Velocidade: {int(slider_velocidade.value)} Hz"
-                halign: "center"
-                color: 0,0,0
-                size_hint_y: None
-                height: "24dp"
+                Label:
+                    text: f"Velocidade: {int(slider_velocidade.value)} Hz"
+                    halign: "center"
+                    color: 0,0,0
+                    size_hint_y: None
+                    height: "24dp"
 
+<Medicao>:
+    size_hint: 0.8, 0.75  
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3  
 
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
 
+        MDTopAppBar:
+            title: 'Medições Elétricas'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
 
+        MDBottomNavigation:
+            panel_color: 0.25, 0.25, 0.25, 0.3
+        #BLOCO DAS MEDIÇÕES DE CORRENTE
+            MDBottomNavigationItem:
+                name: 'screen 1'
+                text: 'Medição de corrente'
+                icon: 'alpha-a-box'
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase R'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX A'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase S'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX A'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase T'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX A'
+                                    halign: 'right'
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente média'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX A'
+                                    halign: 'right'
+        #BLOCO DAS MEDIÇÕES DE TENSÕES
+            MDBottomNavigationItem:
+                name: 'screen 2'
+                text: 'Medição de tensão'
+                icon: 'alpha-v-box'
+
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase R e S'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX V'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase S e T'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX V'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase T e R'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX V'
+                                    halign: 'right'
+        #BLOCO DA MEDIÇÃO DE POTÊNCIA            
+            MDBottomNavigationItem:
+                name: 'screen 3'
+                text: 'Medição de potência'
+                icon: 'alpha-w-box'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Aparente na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VA'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Aparente na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VA'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Aparente na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VA'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Aparente total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VA'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Reativa na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Reativa na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Reativa na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Reativa total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Ativa na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX W'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Ativa na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX W'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Ativa na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX W'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Potência Ativa total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX W'
+                                        halign: 'right'           
+        #BLOCO DA MEDIÇÃO DE FP    
+            MDBottomNavigationItem:
+                name: 'screen 4'
+                text: 'Fator de Potência'
+                icon: 'math-cos'
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase R'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX '
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase S'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX '
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase T'
+                                    halign: 'left'
+                                MDLabel:
+                                    text: 'XXX '
+                                    halign: 'right'
+        #BLOCO DA MEDIÇÃO DE THD    
+            MDBottomNavigationItem:
+                name: 'screen 5'
+                text: 'Medição THD de Tensão'
+                icon: 'sine-wave'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase S e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase R e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase S e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX V'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase R e S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase S e T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tensão entre fase T e R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+                            

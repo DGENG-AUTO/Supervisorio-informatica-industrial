@@ -3,6 +3,9 @@ from kivymd.app import MDApp
 from kivy.uix.label import Label
 from kivy.clock import Clock
 from pyModbusTCP.client import ModbusClient
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDRaisedButton
 
 
 class Modbus_Popup(Popup):
@@ -71,22 +74,78 @@ class Atuacao(Popup):
         super().__init__()
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
+        self.title = ""
+        self.addr = None
 
         self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
-    def liga_desliga_motor(self, addrs, estado):
-        
-        
-        if (estado == 1):
-            self._modbusCliente.write_single_coil(addrs, 1)
-            print("Ligando motor...")
+    def selecionar_partida(self, addr, option):
+        self.tipo_partida_valor = option  
+        self._modbusCliente.write_single_register(addr, option)
 
-        elif (estado == 0):
-            self._modbusCliente.write_single_coil(addrs, 0)
-            print("Desligando motor...")
+        if (option == 3):
+            self.addr = 1319
+            print("Partida direta")
+            self.ids.coluna_velocidade.opacity = 0
+            self.ids.coluna_velocidade.disable = False
+        elif (option == 1):
+            self.addr = 1316
+            self.ids.coluna_velocidade.opacity = 1
+            self.ids.coluna_velocidade.disable = True
+            self.ids.slider_velocidade.disable = False
+            self.ids.slider_velocidade.opacity = 0
+            print("Partida soft-star")
+        elif (option == 2):
+            self.addr = 1312
+            self.addr_hz = 1313
+            self.ids.coluna_velocidade.opacity = 1
+            self.ids.coluna_velocidade.disable = True
+            self.ids.slider_velocidade.opacity = 1
+            self.ids.slider_velocidade.disable = True
+            print("Partida inversor")
         else:
-            print("Erro ao acessar motor.")
-        return estado
+            print("Falha ao selecionar tipo de partida")
+
+    def rampa_velocidade(self,valor):
+        """
+            Define a velocidade do motor em termos de frequência (Hz) a partir a mudança do Slider        
+        """
+        self._modbusCliente.write_single_register(self.addr_hz,valor)
+        print(valor)        
+        
+
+    def controla_partida(self,aciona):
+        if (aciona == 0):
+            self._modbusCliente.write_single_register(self.addr,aciona)
+            self.ids.coluna_velocidade.opacity = 0
+            self.ids.coluna_velocidade.disable = False
+            self.ids.slider_velocidade.opacity = 0
+            self.ids.slider_velocidade.disable = False
+            self.addr = None
+            self.addr_hz = None
+            print("Motor desligado")
+        elif(aciona == 1):
+            self._modbusCliente.write_single_register(self.addr,aciona)
+            print("Motor ligado")
+        elif(aciona == 2):
+            self._modbusCliente.write_single_register(self.addr,aciona)
+            print("Motor resetado")
+        
+
+class Medicao(Popup):
+    """
+        Classe que irá abrir a janela das medições elétricas
+    """
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._ip = kwargs.get('ipmain')
+        self._porta = kwargs.get('portamain')
+        self.title = ""
+
+        self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
+
+
+
 
 
 
