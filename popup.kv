@@ -295,6 +295,7 @@
                                     text: 'Corrente na fase R'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.corrente_r
                                     text: 'XXX A'
                                     halign: 'right'
 
@@ -312,6 +313,7 @@
                                     text: 'Corrente na fase S'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.corrente_s
                                     text: 'XXX A'
                                     halign: 'right'
 
@@ -329,6 +331,24 @@
                                     text: 'Corrente na fase T'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.corrente_t
+                                    text: 'XXX A'
+                                    halign: 'right'
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente no Neutro'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_n
                                     text: 'XXX A'
                                     halign: 'right'
                         MDCard:
@@ -345,6 +365,7 @@
                                     text: 'Corrente média'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.corrente_media
                                     text: 'XXX A'
                                     halign: 'right'
         #BLOCO DAS MEDIÇÕES DE TENSÕES
@@ -374,6 +395,7 @@
                                     text: 'ddp entre a fase R e S'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.tensao_rs
                                     text: 'XXX V'
                                     halign: 'right'
 
@@ -391,6 +413,7 @@
                                     text: 'ddp entre a fase S e T'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.tensao_st
                                     text: 'XXX V'
                                     halign: 'right'
 
@@ -408,6 +431,7 @@
                                     text: 'ddp entre a fase T e R'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.tensao_tr
                                     text: 'XXX V'
                                     halign: 'right'
         #BLOCO DA MEDIÇÃO DE POTÊNCIA            
@@ -438,6 +462,7 @@
                                         text: 'Potência Aparente na Fase R'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.aparente_r
                                         text: 'XXX VA'
                                         halign: 'right'
 
@@ -455,6 +480,7 @@
                                         text: 'Potência Aparente na Fase S'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.aparente_s
                                         text: 'XXX VA'
                                         halign: 'right'
 
@@ -472,6 +498,7 @@
                                         text: 'Potência Aparente na Fase T'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.aparente_t
                                         text: 'XXX VA'
                                         halign: 'right'
                             MDCard:
@@ -488,6 +515,7 @@
                                         text: 'Potência Aparente total'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.aparente_total
                                         text: 'XXX VA'
                                         halign: 'right'
                         MDBoxLayout:
@@ -510,6 +538,7 @@
                                         text: 'Potência Reativa na Fase R'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.reativa_r
                                         text: 'XXX VAr'
                                         halign: 'right'
 
@@ -527,6 +556,7 @@
                                         text: 'Potência Reativa na Fase S'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.reativa_s
                                         text: 'XXX VAr'
                                         halign: 'right'
 
@@ -544,6 +574,7 @@
                                         text: 'Potência Reativa na Fase T'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.reativa_t
                                         text: 'XXX VAr'
                                         halign: 'right'
                             MDCard:
@@ -560,6 +591,7 @@
                                         text: 'Potência Reativa total'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.reativa_total
                                         text: 'XXX VAr'
                                         halign: 'right'
                         MDBoxLayout:
@@ -582,6 +614,7 @@
                                         text: 'Potência Ativa na Fase R'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.ativa_r
                                         text: 'XXX W'
                                         halign: 'right'
 
@@ -599,6 +632,7 @@
                                         text: 'Potência Ativa na Fase S'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.ativa_s
                                         text: 'XXX W'
                                         halign: 'right'
 
@@ -616,6 +650,7 @@
                                         text: 'Potência Ativa na Fase T'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.ativa_t
                                         text: 'XXX W'
                                         halign: 'right'
                             MDCard:
@@ -632,6 +667,7 @@
                                         text: 'Potência Ativa total'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.ativa_total
                                         text: 'XXX W'
                                         halign: 'right'           
         #BLOCO DA MEDIÇÃO DE FP    
@@ -660,6 +696,7 @@
                                     text: 'FP na fase R'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.fp_r
                                     text: 'XXX '
                                     halign: 'right'
 
@@ -677,6 +714,7 @@
                                     text: 'FP na fase S'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.fp_s
                                     text: 'XXX '
                                     halign: 'right'
 
@@ -694,6 +732,7 @@
                                     text: 'FP na fase T'
                                     halign: 'left'
                                 MDLabel:
+                                    id: bc.fp_t
                                     text: 'XXX '
                                     halign: 'right'
         #BLOCO DA MEDIÇÃO DE THD    
@@ -724,6 +763,7 @@
                                         text: 'Medida THD Tensão entre fase S e Neutro'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd_tensao_sn
                                         text: 'XXX V'
                                         halign: 'right'
 
@@ -741,6 +781,7 @@
                                         text: 'Medida THD Tensão entre fase R e Neutro'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd_tensao_rn
                                         text: 'XXX V'
                                         halign: 'right'
 
@@ -755,9 +796,10 @@
                                     orientation: "horizontal"
                                     spacing: "20dp"
                                     MDLabel:
-                                        text: 'Medida THD Tensão entre fase S e Neutro'
+                                        text: 'Medida THD Tensão entre fase T e Neutro'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd_tensao_tn
                                         text: 'XXX V'
                                         halign: 'right'
                         MDBoxLayout:
@@ -780,6 +822,7 @@
                                         text: 'Medida THD Tensão entre fase R e S'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd_tensao_rs
                                         text: 'XXX V'
                                         halign: 'right'
 
@@ -797,6 +840,7 @@
                                         text: 'Medida THD Tensão entre fase S e T'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd_tensao_st
                                         text: 'XXX V'
                                         halign: 'right'
 
@@ -814,6 +858,7 @@
                                         text: 'Medida THD Tensão entre fase T e R'
                                         halign: 'left'
                                     MDLabel:
+                                        id: bc.thd tensao_tr
                                         text: 'XXX VAr'
                                         halign: 'right'
                             

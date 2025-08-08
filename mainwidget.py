@@ -9,6 +9,8 @@ from threading import Thread
 from time import sleep
 from kivy.clock import Clock
 from biblioteca_tags import Biblioteca_tags
+from datetime import datetime
+from random import random
 
 class MainWidget(Screen):
     """
@@ -29,16 +31,29 @@ class MainWidget(Screen):
         self._scan_time = kwargs.get('scan_timemain')
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
+        self._meas = {}
+        self._meas['timestamp'] = None
+        self._meas['values'] = {}
+        self.dic_cores = {}
 
         #BIBLIOTECA DAS TAGS
-        #self._tags = Biblioteca_tags()
+        self._tags_importada = Biblioteca_tags().get_tags()
+        for tag in self._tags_importada:
+            nome = tag['nome']
+            addr = tag['address']
+
+            if (nome == 'bc.corrente_r'):
+                plot_color = (1, 0, 0, 1)
+            else:
+                plot_color = (random(), random(), random(), 1)
+            self.dic_cores[nome] = {'address': addr, 'color': plot_color}
         
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
         self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
-        self._j_medidas = Medicao(ipmain=self._ip, portamain=self._porta)
+        self._j_medidas = Medicao()
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
@@ -63,7 +78,7 @@ class MainWidget(Screen):
         """
             Método que buscará as tags
         """
-        for tag in self._tags:
+        for tag in self.tags:
             if tag['nome'] == nome_tag:
                 return tag['address']
 
@@ -117,29 +132,64 @@ class MainWidget(Screen):
                     if resultado is None:
                         raise Exception("Sem resposta do servidor")
                     
-                    self.estado_motor = self._modbusCliente.read_coils(800, 1)
-                    if self.estado_motor and self.estado_motor[0] == 1:
-                        print("Motor ligado")
-                        
-                    else:
-                        print("Motor desligado")
-
+                    self.read_datas()
+                    self.updateGUI()
+                    sleep(2)
 
                 except Exception as erro:
+                    print("Erro: ",erro.args)
                     self._modbusCliente.close()
                     Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
                     Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
                     Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
                     Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
-                    self._atualiza = False
-
-                sleep(self._scan_time / 1000)
+                    self._atualiza = False                
         except Exception as erro:
             Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}"))
         finally:
             #SERVIRÁ PARA LIBERÁ O ESPAÇO NA MEMÓRIA PARA CRIA UMA NOVA THREAD PARA CONEXÃO FURURAS
             self._update_thread = None
+    
+    def read_datas(self):
+        """
+            Método para leitura no meio do protocolo modbus
+        """
+        self._meas['timestamp'] = datetime.now()
 
+        for tag in self.dic_cores:
+            endereço = self.dic_cores[tag]['address']
+            self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]
+            
+            """for dict in self._tags_importada:
+                if dict['nome'] == tag:
+                    if dict['tipo_modbus'] == '4x':
+                        self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]
+                    if dict['tipo_modbus'] == 'fp':
+                        self._meas['values'][tag] = self.leitura_fp(endereço)
+                    if dict['tipo_modbus'] == '4x_bit':
+                        self._meas['values'][tag] = self.leitura_binario(endereço, dict['bit_pos'])"""
+    
+    def updateGUI(self):
+        """
+            Método para atualização da interface gráfica a partir dos dados lidos
+        """
+        for tag in self.dic_cores:
+            # print(tag)     
+            if tag in self._j_medidas.ids:
+                if "corrente" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' A'
+                elif "tensao" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' V'
+                elif "ativa" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' W'
+                elif "reativa" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VAr'
+                elif "aparente" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VA'
+                elif "bc.fp_" in tag:
+                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) 
+            else:
+                continue
 
 class MainWidgetApp(MDApp):
     """

@@ -76,6 +76,7 @@ class Atuacao(Popup):
         self._porta = kwargs.get('portamain')
         self.title = ""
         self.addr = None
+        self.estado_motor = 0
 
         self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
@@ -123,13 +124,18 @@ class Atuacao(Popup):
             self.ids.slider_velocidade.disable = False
             self.addr = None
             self.addr_hz = None
+            self.estado_motor = 0
             print("Motor desligado")
         elif(aciona == 1):
             self._modbusCliente.write_single_register(self.addr,aciona)
+            self.estado_motor = 1
             print("Motor ligado")
         elif(aciona == 2):
             self._modbusCliente.write_single_register(self.addr,aciona)
             print("Motor resetado")
+    
+    def estado_motor_conticao(self):
+        return (self.estado_motor)
         
 
 class Medicao(Popup):
@@ -138,15 +144,9 @@ class Medicao(Popup):
     """
     def __init__(self, **kwargs):
         super().__init__()
-        self._ip = kwargs.get('ipmain')
-        self._porta = kwargs.get('portamain')
-        self.title = ""
 
-        self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
-
-
-
-
+    
+           
 
 
 
