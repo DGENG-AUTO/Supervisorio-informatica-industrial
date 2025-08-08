@@ -2,10 +2,13 @@ from kivy.uix.popup import Popup
 from kivymd.app import MDApp
 from kivy.uix.label import Label
 from kivy.clock import Clock
+from kivy.uix.boxlayout import BoxLayout
 from pyModbusTCP.client import ModbusClient
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDRaisedButton
+from timeseriesgraph import TimeSeriesGraph
+from kivy_garden.graph import LinePlot
 
 
 class Modbus_Popup(Popup):
@@ -144,6 +147,20 @@ class Medicao(Popup):
     """
     def __init__(self, **kwargs):
         super().__init__()
+
+class Graficos(Popup):
+    """
+        Classe que irá abria a janela dos gráficos
+    """
+    def __init__(self,xmax,plot_color, **kwargs):
+        super().__init__(**kwargs)
+        self.plot = LinePlot(line_width=1.5,color = plot_color)
+        self.ids.graph.add_plot(self.plot)
+        self.ids.graph.xmax = xmax
+
+class LabeledCheckBoxDataGraph(BoxLayout):
+    pass
+        
 
     
            

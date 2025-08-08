@@ -862,3 +862,85 @@
                                         text: 'XXX VAr'
                                         halign: 'right'
                             
+<Graficos>:
+    size_hint: 0.8, 0.80
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3
+
+    FloatLayout:
+        MDTopAppBar:
+            title: 'Gráficos'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+            pos_hint: {'top': 1,'right':1}
+
+        TimeSeriesGraph:
+            id: graph
+            xlabel: 'Horário [s]'
+            ylabel: 'Amper [A]'
+            background_color: 0.5, 0.5, 0.5, 0.5
+            x_ticks_minor: 1
+            x_ticks_major: 5
+            y_ticks_major: 40
+            y_grid_label: True
+            x_grid_label: True
+            padding: 5
+            x_grid: True
+            y_grid: True
+            xmin: 0
+            ymin: 0
+            ymax: 200
+            size_hint: 0.8, 0.58
+            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+            spacing: 10
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 0.7, 1
+                Label:
+                    size_hint: 0.3, 0.6
+                    text: 'Número de pontos do gráfico'
+                LabeledCheckBoxDataGraph:
+                    id: mp20
+                    on_kv_post:
+                        self.ids.label.text = '20'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.active = True
+                LabeledCheckBoxDataGraph:
+                    id: mp50
+                    on_kv_post:
+                        self.ids.label.text = '50'
+                        self.ids.checkbox.group = 'cd_group'
+                LabeledCheckBoxDataGraph:
+                    id: mp100
+                    on_kv_post:
+                        self.ids.label.text = '100'
+                        self.ids.checkbox.group = 'cd_group'
+            Button:
+                text: "Fechar"
+                size_hint: 0.2, 0.4
+                md_bg_color: 0.7, 0.8, 1, 1
+                text_color: 0, 0, 0, 1
+                on_release: root.dismiss()
+
+                    
+            
+
+
+
+<LabeledCheckBoxDataGraph>:
+    orientation: 'horizontal'
+    size_hint: (0.1,1)
+    CheckBox:
+        id: checkbox
+        on_active: app.root._j_graficos.ids.graph.setMaxPoints(int(label.text),0) if app.root is not None else None
+    Label:
+        id: label
+
+

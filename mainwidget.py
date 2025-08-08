@@ -3,7 +3,7 @@ from kivymd.uix.boxlayout import BoxLayout
 from kivymd.uix.screen import Screen
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
-from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao
+from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao, Graficos
 from pyModbusTCP.client import ModbusClient
 from threading import Thread
 from time import sleep
@@ -11,6 +11,7 @@ from kivy.clock import Clock
 from biblioteca_tags import Biblioteca_tags
 from datetime import datetime
 from random import random
+from timeseriesgraph import TimeSeriesGraph
 
 class MainWidget(Screen):
     """
@@ -19,6 +20,7 @@ class MainWidget(Screen):
     """
     _update_thread = None
     _atualiza = True
+    _max_points = 20
 
     def __init__(self,**kwargs):
         """
@@ -54,6 +56,7 @@ class MainWidget(Screen):
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
         self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
         self._j_medidas = Medicao()
+        self._j_graficos = Graficos(self._max_points,self.dic_cores['bc.corrente_r']['color'])
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
@@ -173,6 +176,8 @@ class MainWidget(Screen):
         """
             Método para atualização da interface gráfica a partir dos dados lidos
         """
+
+        #ATUALIZAÇÃO DAS LABEL
         for tag in self.dic_cores:
             # print(tag)     
             if tag in self._j_medidas.ids:
@@ -190,7 +195,12 @@ class MainWidget(Screen):
                      self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) 
             else:
                 continue
+        
+        #ATUALIZAÇÃO DO GRÁFICO
+        self._j_graficos.ids.graph.updateGraph((self._meas['timestamp'],self._meas['values']['bc.corrente_r']),0)
 
+        
+    
 class MainWidgetApp(MDApp):
     """
         Classe principal de desing da aplicação KivyMD.
@@ -207,3 +217,5 @@ class MainWidgetApp(MDApp):
         self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
+    
+    
