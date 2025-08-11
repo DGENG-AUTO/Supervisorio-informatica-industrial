@@ -1,19 +1,216 @@
-if (estado == 1):
-            if (self.tipo_partida_valor == 0):
-                self._modbusCliente.write_single_coil(addrs, 1)
-                print("Ligando motor em partida direta...")
-            elif (self.tipo_partida_valor == 1):
-                self._modbusCliente.write_single_coil(addrs, 1)
-                print("Ligando motor em partida soft-start...")
-            elif (self.tipo_partida_valor == 2):
-                self._modbusCliente.write_single_coil(addrs, 1)
-                print("Ligando motor em partida inversor...")
-            else:
-                print("Partida desconhecida!")
-            self.tipo_partida_valor = None
+<Graficos>:
+    size_hint: 0.8, 0.80
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3
 
-        elif estado == 0:
-            self._modbusCliente.write_single_coil(addrs, 0)
-            print("Desligando motor...")
-        else:
-            print("Erro ao acessar motor.")
+    FloatLayout:
+        MDTopAppBar:
+            title: 'Gráficos'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+            pos_hint: {'top': 1,'right':1}
+
+        TimeSeriesGraph:
+            id: graph
+            xlabel: 'Horário [s]'
+            ylabel: 'Amper [A]'
+            background_color: 0.5, 0.5, 0.5, 0.5
+            x_ticks_minor: 1
+            x_ticks_major: 5
+            y_ticks_major: 40
+            y_grid_label: True
+            x_grid_label: True
+            padding: 5
+            x_grid: True
+            y_grid: True
+            xmin: 0
+            ymin: 0
+            ymax: 200
+            size_hint: 0.8, 0.58
+            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+            spacing: 10
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 0.7, 1
+                Label:
+                    size_hint: 0.3, 0.6
+                    text: 'Número de pontos do gráfico'
+                LabeledCheckBoxDataGraph:
+                    id: mp20
+                    on_kv_post:
+                        self.ids.label.text = '20'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.active = True
+                LabeledCheckBoxDataGraph:
+                    id: mp50
+                    on_kv_post:
+                        self.ids.label.text = '50'
+                        self.ids.checkbox.group = 'cd_group'
+                LabeledCheckBoxDataGraph:
+                    id: mp100
+                    on_kv_post:
+                        self.ids.label.text = '100'
+                        self.ids.checkbox.group = 'cd_group'
+            Button:
+                text: "Fechar"
+                size_hint: 0.2, 0.4
+                md_bg_color: 0.7, 0.8, 1, 1
+                text_color: 0, 0, 0, 1
+                on_release: root.dismiss()
+
+                    
+            
+
+
+
+<LabeledCheckBoxDataGraph>:
+    orientation: 'horizontal'
+    size_hint: (0.1,1)
+    CheckBox:
+        id: checkbox
+        on_active: app.root._j_graficos.ids.graph.setMaxPoints(int(label.text),0) if app.root is not None else None
+    Label:
+        id: label
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        <Graficos>:
+    size_hint: 0.8, 0.80
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3
+
+    FloatLayout:
+        orientation: 'vertical'
+        MDTopAppBar:
+            title: 'Gráficos'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+            pos_hint: {'top': 1,'right':1}
+
+        TimeSeriesGraph:
+            id: graph
+            xlabel: 'Horário [s]'
+            ylabel: 'Amper [A]'
+            background_color: 0.5, 0.5, 0.5, 0.5
+            x_ticks_minor: 1
+            x_ticks_major: 5
+            y_ticks_major: 40
+            y_grid_label: True
+            x_grid_label: True
+            padding: 5
+            x_grid: True
+            y_grid: True
+            xmin: 0
+            ymin: 0
+            ymax: 200
+            size_hint: 0.8, 0.58
+            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+            current_visible: current_checkbox.active
+            voltage_visible: voltage_checkbox.active
+            power_visible: power_checkbox.active
+            thd_visible: thd_checkbox.active
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+            spacing: 10
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 1, 0.6
+                Label:
+                    size_hint: 0.3, 1
+                    text: 'Número de pontos do gráfico'
+                LabeledCheckBoxDataGraph:
+                    id: mp20
+                    on_kv_post:
+                        self.ids.label.text = '20'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.active = True
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+                LabeledCheckBoxDataGraph:
+                    id: mp50
+                    on_kv_post:
+                        self.ids.label.text = '50'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+                LabeledCheckBoxDataGraph:
+                    id: mp100
+                    on_kv_post:
+                        self.ids.label.text = '100'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 1, 0.4
+                Button:
+                    text: "Fechar"
+                    size_hint: 0.2, 1
+                    md_bg_color: 0.7, 0.8, 1, 1
+                    text_color: 0, 0, 0, 1
+                    on_release: root.dismiss()
+                BoxLayout:
+                    orientation: 'horizontal'
+                    CheckBox:
+                        id: current_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: app.root._j_graficos.ids.graph.current_visible = self.active
+                    Label:
+                        text: 'Corrente'
+                    CheckBox:
+                        id: voltage_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: app.root._j_graficos.ids.graph.voltage_visible = self.active
+                    Label:
+                        text: 'Tensão'
+                    CheckBox:
+                        id: power_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: app.root._j_graficos.ids.graph.power_visible = self.active
+                    Label:
+                        text: 'Potência'
+                    CheckBox:
+                        id: thd_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: app.root._j_graficos.ids.graph.thd_visible = self.active
+                    Label:
+                        text: 'Tensão THD'
+
+<LabeledCheckBoxDataGraph>:
+    orientation: 'horizontal'
+    size_hint: (0.1,1)
+    CheckBox:
+        id: checkbox
+        on_active: 
+            app.root._j_graficos.ids.graph.setMaxPoints(int(self.parent.ids.label.text),0) if app.root is not None else None
+        md_bg_color: [0.2, 0.2, 0.2, 1]
+    Label:
+        id: label

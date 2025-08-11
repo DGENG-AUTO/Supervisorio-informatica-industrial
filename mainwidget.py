@@ -56,7 +56,7 @@ class MainWidget(Screen):
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
         self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
         self._j_medidas = Medicao()
-        self._j_graficos = Graficos(self._max_points,self.dic_cores['bc.corrente_r']['color'])
+        self._j_graficos = Graficos(self._max_points, self.dic_cores)
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
@@ -177,9 +177,8 @@ class MainWidget(Screen):
             Método para atualização da interface gráfica a partir dos dados lidos
         """
 
-        #ATUALIZAÇÃO DAS LABEL
+        # ATUALIZAÇÃO DAS LABEL
         for tag in self.dic_cores:
-            # print(tag)     
             if tag in self._j_medidas.ids:
                 if "corrente" in tag:
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' A'
@@ -192,14 +191,35 @@ class MainWidget(Screen):
                 elif "aparente" in tag:
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VA'
                 elif "bc.fp_" in tag:
-                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) 
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag])
             else:
                 continue
         
-        #ATUALIZAÇÃO DO GRÁFICO
-        self._j_graficos.ids.graph.updateGraph((self._meas['timestamp'],self._meas['values']['bc.corrente_r']),0)
-
+        # ATUALIZAÇÃO DO GRÁFICO
+        tag_types = {
+            'current': ['bc.corrente_r', 'bc.corrente_s', 'bc.corrente_n', 'bc.corrente_t', 'bc.corrente_media'],
+            'voltage': ['bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'],
+            'power': ['bc.ativa_r', 'bc.ativa_s', 'bc.ativa_t', 'bc.ativa_total'],
+            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr']
+        }
         
+        # Determinar qual tipo de dado está ativo
+        if self._j_graficos.ids.graph.current_visible:
+            tags_to_plot = tag_types['current']
+        elif self._j_graficos.ids.graph.voltage_visible:
+            tags_to_plot = tag_types['voltage']
+        elif self._j_graficos.ids.graph.power_visible:
+            tags_to_plot = tag_types['power']
+        elif self._j_graficos.ids.graph.thd_visible:
+            tags_to_plot = tag_types['thd']
+        else:
+            tags_to_plot = []
+
+        # Atualizar o gráfico apenas para as tags válidas
+        valid_tags = [tag for tag in tags_to_plot if tag in self._meas['values'] and tag in self.dic_cores]
+        for i, tag in enumerate(valid_tags):
+            self._j_graficos.ids.graph.updateGraph((self._meas['timestamp'], self._meas['values'][tag]), i)
+                
     
 class MainWidgetApp(MDApp):
     """

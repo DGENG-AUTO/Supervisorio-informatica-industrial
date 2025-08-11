@@ -9,6 +9,9 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDRaisedButton
 from timeseriesgraph import TimeSeriesGraph
 from kivy_garden.graph import LinePlot
+from kivy.animation import Animation
+from kivy.graphics import Color, Rectangle
+
 
 
 class Modbus_Popup(Popup):
@@ -148,18 +151,100 @@ class Medicao(Popup):
     def __init__(self, **kwargs):
         super().__init__()
 
+
+
+
 class Graficos(Popup):
     """
-        Classe que irá abria a janela dos gráficos
+        Classe que irá abrir a janela dos gráficos
     """
-    def __init__(self,xmax,plot_color, **kwargs):
+    def __init__(self, xmax, dic_cores, **kwargs):
         super().__init__(**kwargs)
-        self.plot = LinePlot(line_width=1.5,color = plot_color)
-        self.ids.graph.add_plot(self.plot)
-        self.ids.graph.xmax = xmax
+        self.dic_cores = dic_cores
+        self.plots = {}
+        self.tag_types = {
+            'current': ['bc.corrente_r', 'bc.corrente_s', 'bc.corrente_n', 'bc.corrente_t', 'bc.corrente_media'],
+            'voltage': ['bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'],
+            'power': ['bc.ativa_r', 'bc.ativa_s', 'bc.ativa_t', 'bc.ativa_total'],
+            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr']
+        }
 
+        # Criar LinePlot para cada tag, mas não adicionar ao gráfico ainda
+        for tag_type, tags in self.tag_types.items():
+            for tag in tags:
+                if tag in self.dic_cores:
+                    plot_color = self.dic_cores[tag]['color']
+                    plot = LinePlot(line_width=1.5, color=plot_color)
+                    self.plots[tag] = {'plot': plot, 'type': tag_type}
+
+        self.ids.graph.xmax = xmax
+        self.update_plot_visibility()
+
+    def on_pre_open(self):
+        self.update_plot_visibility()
+
+    def update_plot_visibility(self):
+        active_type = None
+        if self.ids.graph.current_visible:
+            active_type = 'current'
+            self.ids.graph.ylabel = 'Amper [A]'
+            self.ids.graph.ymax = 200
+            self.ids.graph.y_ticks_major = 40
+        elif self.ids.graph.voltage_visible:
+            active_type = 'voltage'
+            self.ids.graph.ylabel = 'Volts [V]'
+            self.ids.graph.ymax = 500
+            self.ids.graph.y_ticks_major = 100
+        elif self.ids.graph.power_visible:
+            active_type = 'power'
+            self.ids.graph.ylabel = 'Power [W]'
+            self.ids.graph.ymax = 1000
+            self.ids.graph.y_ticks_major = 200
+        elif self.ids.graph.thd_visible:
+            active_type = 'thd'
+            self.ids.graph.ylabel = 'THD [%]'
+            self.ids.graph.ymax = 100
+            self.ids.graph.y_ticks_major = 20
+
+        # Remover todos os plots do gráfico
+        for plot in self.ids.graph.plots[:]:  # Usar cópia para evitar modificação durante iteração
+            self.ids.graph.remove_plot(plot)
+
+        # Adicionar apenas os plots do tipo ativo
+        for tag, plot_info in self.plots.items():
+            plot = plot_info['plot']
+            tag_type = plot_info['type']
+            if tag_type == active_type:
+                self.ids.graph.add_plot(plot)
+            else:
+                plot.points = []  # Limpar os dados do plot inativo
+
+        # Atualizar legenda
+        self.ids.legend.clear_widgets()
+        legend_title = Label(text='Legenda', size_hint_y=0.1, color=(1, 1, 1, 1))
+        self.ids.legend.add_widget(legend_title)
+        if active_type:
+            for tag in self.tag_types[active_type]:
+                if tag in self.dic_cores:
+                    legend_item = BoxLayout(orientation='horizontal', size_hint_y=0.1)
+                    color = self.dic_cores[tag]['color']
+                    color_box = Label(text='', size_hint_x=0.2)
+                    with color_box.canvas:
+                        Color(rgba=color)
+                        Rectangle(pos=(color_box.x + 5, color_box.y + 5), size=(20, 10))
+                    label = Label(text=tag.replace('bc.', ''), color=(1, 1, 1, 1))
+                    legend_item.add_widget(color_box)
+                    legend_item.add_widget(label)
+                    self.ids.legend.add_widget(legend_item)
+
+
+                
+    
+        
 class LabeledCheckBoxDataGraph(BoxLayout):
     pass
+
+    
         
 
     
