@@ -244,6 +244,31 @@ class Graficos(Popup):
 class LabeledCheckBoxDataGraph(BoxLayout):
     pass
 
+from kivy.uix.popup import Popup
+from kivymd.uix.selectioncontrol import MDCheckbox  # Ajuste conforme sua implementação de LabeledCheckBoxHistGraph
+
+class LabeledCheckBoxHistGraph(BoxLayout):  # Defina esta classe se não estiver em outro lugar
+    pass  # Implemente conforme necessário (ex.: com Label e Checkbox)
+
+class HistGraphPopup(Popup):
+    def __init__(self, **kwargs):
+        # Extrai o argumento 'tags' de kwargs e define como atributo da classe
+        self.tags = kwargs.pop('tags', {})
+        
+        # Chama o construtor da classe base com os kwargs restantes
+        super().__init__(**kwargs)
+        
+        # Inicializa o conteúdo após o super().__init__
+        for key, value in self.tags.items():
+            cb = LabeledCheckBoxHistGraph()
+            cb.ids.label.text = key
+            cb.ids.label.color = value['color']
+            cb.id = key
+            self.ids.sensores.add_widget(cb)
+
+    
+class LabeledCheckBoxHistGraph(BoxLayout):
+    pass
     
         
 

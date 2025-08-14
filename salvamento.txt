@@ -82,6 +82,47 @@
 
 
 
+def update_graph_selection(self, tag_id, active):
+        """Atualiza a lista de tags selecionadas com base no estado do CheckBox."""
+        if active and tag_id not in self._selected_tags:
+            self._selected_tags.append(tag_id)
+        elif not active and tag_id in self._selected_tags:
+            self._selected_tags.remove(tag_id)
+        print(f"Tags selecionadas: {self._selected_tags}")  # Depuração
+
+    def read_data(self, init_time, final_time, popup):
+        """Método que coleta os dados históricos e atualiza o gráfico."""
+        print("Entrou em read_data")  # Depuração
+        try:
+            init_t = self.parseDTString(init_time)
+            final_t = self.parseDTString(final_time)
+            cols = self._selected_tags
+
+            if init_t is None or final_t is None or len(cols) == 0 or init_t >= final_t:
+                print("Intervalo de datas inválido ou nenhuma tag selecionada")
+                return
+
+            cols.append('timestamp')
+            dados = self._histdados.acesso_dados_historicos(init_t, final_t, cols)
+            print("Dados recuperados:", dados)
+
+            
+
+            popup.ids.graph.clearPlots()
+            for key, value in dados.items():
+                if key == 'timestamp':
+                    continue
+                timestamps = [(t - init_t).total_seconds() / 3600 for t in dados['timestamp']]
+                p = LinePlot(line_width=1.5, color=self.dic_exemplo.get(key, {'color': (0, 0, 1, 1)})['color'])
+                p.points = [(x, y) for x, y in zip(timestamps, value) if y is not None]
+                popup.ids.graph.add_plot(p)
+
+            popup.ids.graph.xmax = max(timestamps) if timestamps else 10
+            popup.ids.graph.ymax = max(dados.get('corrente', [0])) * 1.1 if dados.get('corrente') else 100
+            popup.ids.graph.update_x_labels([t.strftime('%H:%M:%S') for t in dados['timestamp']])
+
+        except Exception as erro:
+            print("Erro em read_data:", erro)
 
 
 

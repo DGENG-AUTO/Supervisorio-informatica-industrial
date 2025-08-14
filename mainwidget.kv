@@ -1,225 +1,276 @@
 #:kivy 2.0.0
 <MainWidget>:
-    MDNavigationLayout:
+    BoxLayout:
+        orientation: 'vertical'
         md_bg_color: 0.83, 0.84, 0.9
-        ScreenManager:
-            MDScreen:
-                name: "main"
-                BoxLayout:
-                    orientation:'vertical'
-                    MDTopAppBar:
-                        orientation: 'horizontal'
-                        elevation: 2
-                        left_action_items: [["menu", lambda x: nav_drawer.set_state("toggle")]]
-                        BoxLayout:
-                            orientation: 'vertical'
-                            size_hint: None, None
-                            size: "120dp", "50dp"
-                            spacing: "4dp"
-                            Label:
-                                id: label_con
-                                text: "[b]DESCONECTADO[/b]"
-                                markup: True
-                                color: (1, 0, 0, 1)
-                                font_size: "12sp"
-                                halign: "center"
-                                size_hint_y: 0.4
 
-                            Image:
-                                id: img_con
-                                source: "img/con_off.png"
-                                allow_stretch: True
-                                keep_ratio: True
-                                size_hint: (1, 0.6)                                
-                    FloatLayout:
-                        size_hint: (1,1)
-                        Image:
-                            #IMAGEM DE FUNDO DO SUPERVISÓRIO (DUAS CAIXA D'ÁGUA)
-                            source: "img/base_supervisorio.png"
-                            allow_stretch: True
-                            keep_ratio: False
-                            size_hint: (1, 1)
-                            pos_hint: {"center_x": 0.5, "center_y": 0.5}
-                        BoxLayout:
-                            #BARRA DE PROGRESSO DA CAIXA D'ÁGUA INFERIOR 
-                            orientation: 'vertical'
-                            size_hint: (0.15,0.40)
-                            pos_hint: {'x': 0.050, 'y': 0.11}
-                            padding: "5dp"
-                            canvas.before:
-                                Color:
-                                    rgba: (0.4, 0.4, 0.4, 1)
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
-                            MDProgressBar:
-                                id: nivel_agua_inferior
-                                orientation: 'vertical'
-                                value: 2  #VALOR DEVE SER MODIFICADO EM TEMPO REAL(NÃO ESQUEÇA!)
-                                max: 100
-                                color: (0, 0, 1, 1)
-                                size_hint: (1, 1)
-                        BoxLayout:
-                            #BARRA DE PROGRESSO DA CAIXA D'ÁGUA SUPERIOR
-                            orientation: 'vertical'
-                            size_hint: (0.14,0.40)
-                            pos_hint: {'x': 0.78, 'y': 0.53}
-                            padding: "5dp"
-                            canvas.before:
-                                Color:
-                                    rgba: (0.4, 0.4, 0.4, 1)
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
-                            MDProgressBar:
-                                id: nivel_agua_superior
-                                orientation: 'vertical'
-                                value: 80  #VALOR DEVE SER MODIFICADO EM TEMPO REAL(NÃO ESQUEÇA!)
-                                max: 100
-                                color: (0, 0, 1, 1)
-                                size_hint: (1, 1)
-                        Image:
-                            id: img_motor  #MUDAR A LÓGICA
-                            source: "img/Motor_on (1).png"  #MUDAR A LÓGICA
-                            allow_stretch: True
-                            keep_ratio: False
-                            size_hint: (0.08, 0.14)
-                            pos_hint: {"x": 0.382, "y": 0.395}
-                        #---------------CARDS DE DADOS---------------
-                        FloatLayout:
-                            BoxLayout:
-                                orientation: 'vertical'
-                                spacing: "30dp"
-                                padding: "10dp"                                
-                                size_hint: None, None
-                                size: "200dp", "150dp"
-                                pos_hint: {"x": 0.85,"y":0.10}
-                                MDRaisedButton:
-                                    size_hint: None, None
-                                    size: "200dp", "150dp"
-                                    id: botao_comando
-                                    text: "[b]ATUAÇÃO/CONTROLE[/b]"
-                                    on_release:root._j_atuacao.open()
-                                MDRaisedButton:
-                                    size_hint: None, None
-                                    size: "200dp", "150dp"
-                                    id: botao_temperatura
-                                    text: "[b]GRÁFICOS[/b]"
-                                    on_release: root._j_graficos.open()
-                                MDRaisedButton:
-                                    size_hint: None, None
-                                    size: "200dp", "150dp"
-                                    id: botao_m_eletrica
-                                    text: "[b]MEDIÇÕES ELÉTRICAS[/b]"
-                                    on_release: root._j_medidas.open()
-                            BoxLayout:
-                                orientation: 'vertical'
-                                spacing: "5dp"
-                                padding: "10dp"
-                                size_hint: None, None
-                                size: "200dp", "150dp"
-                                pos_hint: {'x': 0.056,'y':0.56}
-                                MDLabel:
-                                    text: "NÍVEL INFERIOR"
-                                    halign: "center"
-                                    size_hint_y: None
-                                    height: "15dp"
-                                MDLabel:
-                                    size_hint_y: None
-                                    height: "20dp"
-                                    color: 1, 1, 1, 1
-                                    text: "XXX VA"
-                                    halign: "center"
-                                    canvas.before:
-                                        Color:
-                                            rgba: (0.165, 0.376, 0.647, 1)
-                                        RoundedRectangle:
-                                            pos: self.pos
-                                            size: self.size
-                                            radius: [12]
-                            BoxLayout:
-                                orientation: 'vertical'
-                                spacing: "5dp"
-                                padding: "10dp"
-                                size_hint: None, None
-                                size: "200dp", "150dp"
-                                pos_hint: {'x': 0.6,'y':0.90}
-                                MDLabel:
-                                    text: "NÍVEL SUPERIOR"
-                                    halign: "center"
-                                    size_hint_y: None
-                                    height: "15dp"
-                                MDLabel:
-                                    size_hint_y: None
-                                    height: "20dp"
-                                    color: 1, 1, 1, 1
-                                    text: "XXX VA"
-                                    halign: "center"
-                                    canvas.before:
-                                        Color:
-                                            rgba: (0.165, 0.376, 0.647, 1)
-                                        RoundedRectangle:
-                                            pos: self.pos
-                                            size: self.size
-                                            radius: [12] 
-        #MENU LATERAL
-        MDNavigationDrawer:
-            md_bg_color: 0.83, 0.84, 0.9
-            id: nav_drawer
+        MDTopAppBar:
+            orientation: 'horizontal'
+            elevation: 2
+            #left_action_items: [["menu", lambda x: nav_drawer.set_state("toggle")]]  # Mantido para compatibilidade, mas sem efeito sem a barra lateral
             BoxLayout:
                 orientation: 'vertical'
-                padding: "8dp"
-                spacing: "8dp"
+                size_hint: None, None
+                size: "120dp", "50dp"
+                spacing: "4dp"
+                Label:
+                    id: label_con
+                    text: "[b]DESCONECTADO[/b]"
+                    markup: True
+                    color: (1, 0, 0, 1)
+                    font_size: "12sp"
+                    halign: "center"
+                    size_hint_y: 0.4
                 Image:
-                    source: "img/usuario.png"
+                    id: img_con
+                    source: "img/con_off.png"
+                    allow_stretch: True
+                    keep_ratio: True
+                    size_hint: (1, 0.6)                                
+
+        FloatLayout:
+            size_hint: (1, 1)
+
+            Image:
+                # IMAGEM DE FUNDO DO SUPERVISÓRIO (DUAS CAIXA D'ÁGUA)
+                source: "img/base_supervisorio.png"
+                allow_stretch: True
+                keep_ratio: False
+                size_hint: (1, 1)
+                pos_hint: {"center_x": 0.5, "center_y": 0.5}
+
+            BoxLayout:
+                # BARRA DE PROGRESSO DA CAIXA D'ÁGUA INFERIOR 
+                orientation: 'vertical'
+                size_hint: (0.15, 0.40)
+                pos_hint: {'x': 0.050, 'y': 0.11}
+                padding: "5dp"
+                canvas.before:
+                    Color:
+                        rgba: (0.4, 0.4, 0.4, 1)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                MDProgressBar:
+                    id: nivel_agua_inferior
+                    orientation: 'vertical'
+                    value: 2  # VALOR DEVE SER MODIFICADO EM TEMPO REAL(NÃO ESQUEÇA!)
+                    max: 100
+                    color: (0, 0, 1, 1)
+                    size_hint: (1, 1)
+
+            BoxLayout:
+                # BARRA DE PROGRESSO DA CAIXA D'ÁGUA SUPERIOR
+                orientation: 'vertical'
+                size_hint: (0.14, 0.40)
+                pos_hint: {'x': 0.78, 'y': 0.53}
+                padding: "5dp"
+                canvas.before:
+                    Color:
+                        rgba: (0.4, 0.4, 0.4, 1)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                MDProgressBar:
+                    id: nivel_agua_superior
+                    orientation: 'vertical'
+                    value: 80  # VALOR DEVE SER MODIFICADO EM TEMPO REAL(NÃO ESQUEÇA!)
+                    max: 100
+                    color: (0, 0, 1, 1)
+                    size_hint: (1, 1)
+
+            Image:
+                id: img_motor  # MUDAR A LÓGICA
+                source: "img/Motor_on (1).png"  # MUDAR A LÓGICA
+                allow_stretch: True
+                keep_ratio: False
+                size_hint: (0.08, 0.14)
+                pos_hint: {"x": 0.382, "y": 0.395}
+
+            # CARDS DE DADOS
+            FloatLayout:
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "30dp"
+                    padding: "10dp"                                
                     size_hint: None, None
-                    size: "50dp", "50dp"
-                MDLabel:
-                    text: "Cliente"
-                    font_style: "Subtitle1"
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                MDLabel:
-                    text: "cliente@estudante.ufjf.br"
-                    font_style: "Caption"
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                ScrollView:
-                    MDList:
-                        OneLineIconListItem:
-                            text: "Conexão MODBUS"
-                            id: bt_conection
-                            on_release: root.abrir_fechar_janela(1)
-                            IconLeftWidget:
-                                icon: "contactless-payment"
-                        OneLineIconListItem:
-                            text: "Scan time"
-                            id: bt_time
-                            on_release: root.abrir_fechar_janela(2)
-                            IconLeftWidget:
-                                icon: "wrench-clock"
-                        OneLineIconListItem:
-                            text: "Configurações"
-                            id: bt_setting
-                            IconLeftWidget:
-                                icon:"cog"
-                        OneLineIconListItem:
-                            text: "Histórico de dados"
-                            id: bt_data
-                            IconLeftWidget:
-                                icon: "history"
-                        OneLineIconListItem:
-                            text: "Sair"
-                            on_release: app.stop()
-                            IconLeftWidget:
-                                icon: "logout"
-    
+                    size: "200dp", "150dp"
+                    pos_hint: {"x": 0.85, "y": 0.10}
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "5dp"
+                    padding: "10dp"
+                    size_hint: None, None
+                    size: "200dp", "150dp"
+                    pos_hint: {'x': 0.056, 'y': 0.56}
+                    MDLabel:
+                        text: "NÍVEL INFERIOR"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "15dp"
+                    MDLabel:
+                        size_hint_y: None
+                        height: "20dp"
+                        color: 1, 1, 1, 1
+                        text: "XXX VA"
+                        halign: "center"
+                        canvas.before:
+                            Color:
+                                rgba: (0.165, 0.376, 0.647, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [12]
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "5dp"
+                    padding: "10dp"
+                    size_hint: None, None
+                    size: "200dp", "150dp"
+                    pos_hint: {'x': 0.6, 'y': 0.90}
+                    MDLabel:
+                        text: "NÍVEL SUPERIOR"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "15dp"
+                    MDLabel:
+                        size_hint_y: None
+                        height: "20dp"
+                        color: 1, 1, 1, 1
+                        text: "XXX VA"
+                        halign: "center"
+                        canvas.before:
+                            Color:
+                                rgba: (0.165, 0.376, 0.647, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [12]
 
-
-    
-           
-
-        
-
-
-
+            # BOTÕES DE COMANDO PARTE INFERIOR
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: (1, 0.1)  
+                pos_hint: {'center_x': 0.5, 'y': 0} 
+                padding: "5dp"
+                spacing: "5dp"
+            #BOTÃO ATUAÇÃO
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_comando
+                    on_release: root._j_atuacao.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "cog"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: 'ATUAÇÃO'
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #BOTÃO GRAFICOS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_temperatura
+                    on_release: root._j_graficos.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "chart-line"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "GRÁFICOS"
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #BTÃO MEDIÇÕES
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_m_eletrica
+                    on_release: root._j_medidas.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "meter-electric"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "MEDIÇÕES"
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #BOTÃO DE CONEXÃO MODBUS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_conection
+                    on_release: root._j_modbusPopup.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "link"  # Substitua por "img/custom_icon_modbus.png" se personalizado
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "CONEXÃO MODBUS"
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #BOTÃO TEMPO DE VARREDURA
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_time
+                    on_release: root._j_scanPopup.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "clock"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "SCAN"
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #HISTÓRIOC DE DADOS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_data
+                    on_release: root._j_histgraph.open()  
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "history"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "HISTÓRICO"
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #SAIR
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    on_release:
+                        on_release: root.desconectar()
+                        app.stop()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "logout"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "SAIR"
+                            halign: "center"
+                            size_hint: (0.6, 1)

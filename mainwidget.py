@@ -3,7 +3,7 @@ from kivymd.uix.boxlayout import BoxLayout
 from kivymd.uix.screen import Screen
 from kivy.core.window import Window
 from kivy.lang.builder import Builder
-from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao, Graficos
+from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao, Graficos, HistGraphPopup
 from pyModbusTCP.client import ModbusClient
 from threading import Thread
 from time import sleep
@@ -12,6 +12,8 @@ from biblioteca_tags import Biblioteca_tags
 from datetime import datetime
 from random import random
 from timeseriesgraph import TimeSeriesGraph
+from modulopersistencia import ModbusPersistencia
+from kivy_garden.graph import LinePlot
 
 class MainWidget(Screen):
     """
@@ -37,18 +39,22 @@ class MainWidget(Screen):
         self._meas['timestamp'] = None
         self._meas['values'] = {}
         self.dic_cores = {}
-
+        self._j_medidas = Medicao()
+        self._selected_tags = []
         #BIBLIOTECA DAS TAGS
         self._tags_importada = Biblioteca_tags().get_tags()
         for tag in self._tags_importada:
             nome = tag['nome']
             addr = tag['address']
-
-            if (nome == 'bc.corrente_r'):
-                plot_color = (1, 0, 0, 1)
-            else:
-                plot_color = (random(), random(), random(), 1)
-            self.dic_cores[nome] = {'address': addr, 'color': plot_color}
+            if nome in self._j_medidas.ids:
+                if (nome == 'bc.corrente_r'):
+                    plot_color = (1, 0, 0, 1)
+                else:
+                    plot_color = (random(), random(), random(), 1)
+                self.dic_cores[nome] = {'address': addr, 'color': plot_color}
+        
+        self.dic_exemplo = {}
+        self.dic_exemplo['bc.corrente_r']= {'address': 840, 'color': (1, 0, 0, 1)}
         
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
@@ -57,6 +63,8 @@ class MainWidget(Screen):
         self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
         self._j_medidas = Medicao()
         self._j_graficos = Graficos(self._max_points, self.dic_cores)
+        self._j_histgraph = HistGraphPopup(tags=self.dic_exemplo)
+        self._histdados = ModbusPersistencia(scantime=self._scan_time)
 
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
@@ -84,6 +92,15 @@ class MainWidget(Screen):
         for tag in self.tags:
             if tag['nome'] == nome_tag:
                 return tag['address']
+            
+    def desconectar(self):
+        self._modbusCliente.close()
+        Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
+        Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
+        Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
+        Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
+        self._atualiza = False
+
 
     
 
@@ -137,6 +154,7 @@ class MainWidget(Screen):
                     
                     self.read_datas()
                     self.updateGUI()
+                    self._histdados.guardar_dados(self._meas)
                     sleep(2)
 
                 except Exception as erro:
@@ -219,7 +237,47 @@ class MainWidget(Screen):
         valid_tags = [tag for tag in tags_to_plot if tag in self._meas['values'] and tag in self.dic_cores]
         for i, tag in enumerate(valid_tags):
             self._j_graficos.ids.graph.updateGraph((self._meas['timestamp'], self._meas['values'][tag]), i)
-                
+
+    def update_graph_selection(self, tag_id, active):
+        """Atualiza a lista de tags selecionadas com base no estado do CheckBox."""
+        if active and tag_id not in self._selected_tags:
+            self._selected_tags.append(tag_id)
+        elif not active and tag_id in self._selected_tags:
+            self._selected_tags.remove(tag_id)
+        print(f"Tags selecionadas: {self._selected_tags}")
+
+
+    def read_data(self,a,b):
+        """
+            Método que coleta as informações da interface fornecidas pelo usuário e requisita a busta no BD
+        """
+        try:
+            init_t = self._histdados.parseDTString(a)
+            final_t = self._histdados.parseDTString(b)
+            cols = self._selected_tags
+            
+            if init_t is None or final_t is None or len(cols) == 0:
+                return
+            cols.append('timestamp')
+
+            dados = self._histdados.acesso_dados_historicos(init_t, final_t, cols)
+            print(dados)
+            self._j_histgraph.ids.graph.clearPlots()
+
+            for key, value in dados.items():
+                if key == 'timestamp':
+                    continue
+                p = LinePlot(line_width=1.5, color=self.dic_cores.get(key, {'color': (0, 0, 1, 1)})['color'])
+                p.points = [(i, value[i]) for i in range(len(value))]  # Usar índices como x
+                self._j_histgraph.ids.graph.add_plot(p)
+            
+            self._j_histgraph.ids.graph.xmax = len(dados['timestamp']) - 1  
+            self._j_histgraph.ids.graph.update_x_labels(dados['timestamp'])
+
+        except Exception as erro:
+            print("Erro: ", erro.args)    
+
+          
     
 class MainWidgetApp(MDApp):
     """
