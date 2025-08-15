@@ -14,6 +14,9 @@ from random import random
 from timeseriesgraph import TimeSeriesGraph
 from modulopersistencia import ModbusPersistencia
 from kivy_garden.graph import LinePlot
+from pymodbus.client.mixin import ModbusClientMixin
+
+
 
 class MainWidget(Screen):
     """
@@ -39,23 +42,28 @@ class MainWidget(Screen):
         self._meas['timestamp'] = None
         self._meas['values'] = {}
         self.dic_cores = {}
+        self.dic_exemplo = {}
         self._j_medidas = Medicao()
         self._selected_tags = []
-        #BIBLIOTECA DAS TAGS
+
+        #BIBLIOTECA DAS TAGS - FILTRARÁ AS TAGS NECESSÁRIAS QUE SERÃO USADAS
         self._tags_importada = Biblioteca_tags().get_tags()
         for tag in self._tags_importada:
             nome = tag['nome']
             addr = tag['address']
+            tipo = tag['tipo_modbus']
             if nome in self._j_medidas.ids:
                 if (nome == 'bc.corrente_r'):
                     plot_color = (1, 0, 0, 1)
                 else:
                     plot_color = (random(), random(), random(), 1)
-                self.dic_cores[nome] = {'address': addr, 'color': plot_color}
-        
-        self.dic_exemplo = {}
-        self.dic_exemplo['bc.corrente_r']= {'address': 840, 'color': (1, 0, 0, 1)}
-        
+                self.dic_cores[nome] = {'address': addr, 'color': plot_color,'tipo_modbus': tipo}
+                tags_validas = [
+                    'bc.corrente_media', 'bc.ativa_total', 'bc.reativa_total',
+                    'bc.aparente_total', 'bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'
+                ]
+                if nome.startswith("bc.temp_") or nome in tags_validas:
+                    self.dic_exemplo[nome] = {'address': addr, 'color': plot_color, 'tipo_modbus': tipo}              
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
@@ -69,40 +77,26 @@ class MainWidget(Screen):
         #criando a conexão MODBUS-TCP
         self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
     
-
-    def abrir_fechar_janela(self,ref):
-        """
-            Método que abrirá o popup Modbus_Popup e Scan_Popup e fechará a barra lateral
-            afim de que não haja poluição visual na tela
-
-            Parâmetro:
-            ref (int): Parâmetro que definirá qual janela será popup
-        """
-        if ref == 1:
-            self._j_modbusPopup.open()
-            self.ids.nav_drawer.set_state("close")
-        elif ref == 2:
-            self._j_scanPopup.open()
-            self.ids.nav_drawer.set_state("close")
-
-    def encontrar_tag(self,nome_tag):
-        """
-            Método que buscará as tags
-        """
-        for tag in self.tags:
-            if tag['nome'] == nome_tag:
-                return tag['address']
-            
+    
+    #VISTO       
     def desconectar(self):
+        """
+            Método que desconectará o supervisório da rede MODBUS
+        """
         self._modbusCliente.close()
         Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
         Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
         Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
         Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
-        self._atualiza = False
+        self._atualiza = False 
 
-
-    
+    #VISTO
+    def conf_scan_time(self, time):
+        """
+            Método que configura o tempo de varredura
+        """
+        self._scan_time = time
+        print("Scantime configurado: ",self._scan_time)   
 
 
     def start_atendimento(self, ip_digitado, porta_digitado):
@@ -148,14 +142,24 @@ class MainWidget(Screen):
         try:
             while self._atualiza:
                 try:
+                    #CAPTAÇÃO DE ERRO
                     resultado = self._modbusCliente.read_holding_registers(0, 1)
                     if resultado is None:
                         raise Exception("Sem resposta do servidor")
                     
+                    #MUDANÇA DO MOTOR:
+                    if(self._j_atuacao.est_motor()):
+                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_on (1).png"))
+                    else:
+                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_off (1).png"))
+
+                    #CAPTAÇÃO DE DADOS    
                     self.read_datas()
                     self.updateGUI()
                     self._histdados.guardar_dados(self._meas)
-                    sleep(2)
+
+                    #TEMPO DE VARREDURA, DIVIDIDO POR 1000 POIS A ENTRADA É EM ms
+                    sleep(self._scan_time/1000)
 
                 except Exception as erro:
                     print("Erro: ",erro.args)
@@ -179,7 +183,23 @@ class MainWidget(Screen):
 
         for tag in self.dic_cores:
             endereço = self.dic_cores[tag]['address']
-            self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]
+            tipo_modbus = self.dic_cores[tag]['tipo_modbus']
+            
+            if tipo_modbus == '4x':
+                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço, 1)[0]
+            elif tipo_modbus == 'FP':
+                self._meas['values'][tag] = self.leitura_fp(endereço)
+            
+            
+            """elif tipo_modbus == '4x_bit':
+                bit_pos = tag_info.get('bit_pos', 0)  # Pega a posição do bit, default 0
+                self._meas['values'][tag] = self.leitura_binario(endereço, bit_pos)
+
+
+
+
+                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]"""
+            
             
             """for dict in self._tags_importada:
                 if dict['nome'] == tag:
@@ -189,6 +209,19 @@ class MainWidget(Screen):
                         self._meas['values'][tag] = self.leitura_fp(endereço)
                     if dict['tipo_modbus'] == '4x_bit':
                         self._meas['values'][tag] = self.leitura_binario(endereço, dict['bit_pos'])"""
+    
+    def leitura_fp(self, addr):
+        puxada = self._modbusCliente.read_holding_registers(addr,2)
+        tipo = ModbusClientMixin.DATATYPE.FLOAT32
+        dados = ModbusClientMixin.convert_from_registers(puxada, data_type=tipo,word_order='little')
+        return dados
+
+    def leitura_binario(self, addr, bit_pos):
+        puxada = self._modbusCliente.read_holding_registers(addr, 1)
+        if puxada:
+            bits = ModbusClientMixin.convert_from_registers(puxada, data_type=ModbusClientMixin.DATATYPE.BITS, wordorder='little')
+            return 1 if bits[bit_pos] else 0
+        return None
     
     def updateGUI(self):
         """
@@ -210,6 +243,8 @@ class MainWidget(Screen):
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VA'
                 elif "bc.fp_" in tag:
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag])
+                elif "bc.temp":
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' °C'
             else:
                 continue
         
@@ -218,10 +253,11 @@ class MainWidget(Screen):
             'current': ['bc.corrente_r', 'bc.corrente_s', 'bc.corrente_n', 'bc.corrente_t', 'bc.corrente_media'],
             'voltage': ['bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'],
             'power': ['bc.ativa_r', 'bc.ativa_s', 'bc.ativa_t', 'bc.ativa_total'],
-            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr']
+            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr'],
+            'temperature': ['bc.temp_r', 'bc.temp_s', 'bc.temp_t', 'bc.temp_carc']
         }
         
-        # Determinar qual tipo de dado está ativo
+        #DETERMINAR QUAL TIPO DE DADO ESTÁ ATIVO
         if self._j_graficos.ids.graph.current_visible:
             tags_to_plot = tag_types['current']
         elif self._j_graficos.ids.graph.voltage_visible:
@@ -230,6 +266,8 @@ class MainWidget(Screen):
             tags_to_plot = tag_types['power']
         elif self._j_graficos.ids.graph.thd_visible:
             tags_to_plot = tag_types['thd']
+        elif self._j_graficos.ids.graph.temp_visible:
+            tags_to_plot = tag_types['temperature']
         else:
             tags_to_plot = []
 
@@ -268,7 +306,7 @@ class MainWidget(Screen):
                 if key == 'timestamp':
                     continue
                 p = LinePlot(line_width=1.5, color=self.dic_cores.get(key, {'color': (0, 0, 1, 1)})['color'])
-                p.points = [(i, value[i]) for i in range(len(value))]  # Usar índices como x
+                p.points = [(i, value[i]) for i in range(len(value))] 
                 self._j_histgraph.ids.graph.add_plot(p)
             
             self._j_histgraph.ids.graph.xmax = len(dados['timestamp']) - 1  

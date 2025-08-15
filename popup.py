@@ -12,8 +12,6 @@ from kivy_garden.graph import LinePlot
 from kivy.animation import Animation
 from kivy.graphics import Color, Rectangle
 
-
-
 class Modbus_Popup(Popup):
     """
         Classe Modbus_Popup que abri uma segunda janela para configurar o protocolo Modbus.    
@@ -34,6 +32,7 @@ class Modbus_Popup(Popup):
         self.ids.entrada_ip.text = str(self.ip)     #Define um valor para a caixa de texto ip
         self.ids.entrada_porta.text = str(self.porta)   #Define um valor para a caixa de texto porta
         self.estado_motor = None
+
     
     def set_aviso(self, mensagem):
         """
@@ -69,8 +68,8 @@ class Scan_Popup(Popup):
                 **kwargs: Argumentos adicionais do Kivy.
         """
         super().__init__(**kwargs)
-        self._scan_time = scan_time
-        self.ids.entrada_time.text = str(self._scan_time) #Define um valor para a caixa de texto
+        #self._scan_time = scan_time
+        #self.ids.entrada_time.text = str(self._scan_time) #Define um valor para a caixa de texto
 
 class Atuacao(Popup):
     """
@@ -78,39 +77,49 @@ class Atuacao(Popup):
     """
     def __init__(self, **kwargs):
         super().__init__()
+
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
         self.title = ""
         self.addr = None
-        self.estado_motor = 0
+        self.estado_motor = False
+    
+
+    
 
         self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
     def selecionar_partida(self, addr, option):
         self.tipo_partida_valor = option  
-        self._modbusCliente.write_single_register(addr, option)
 
         if (option == 3):
+            self._modbusCliente.write_single_register(addr, option)
             self.addr = 1319
             print("Partida direta")
+            self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 0
             self.ids.coluna_velocidade.disable = False
         elif (option == 1):
+            self._modbusCliente.write_single_register(addr, option)
             self.addr = 1316
+            self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 1
             self.ids.coluna_velocidade.disable = True
             self.ids.slider_velocidade.disable = False
             self.ids.slider_velocidade.opacity = 0
             print("Partida soft-star")
         elif (option == 2):
+            self._modbusCliente.write_single_register(addr, option)
             self.addr = 1312
             self.addr_hz = 1313
+            self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 1
             self.ids.coluna_velocidade.disable = True
             self.ids.slider_velocidade.opacity = 1
             self.ids.slider_velocidade.disable = True
             print("Partida inversor")
         else:
+            self.cond_liga = False
             print("Falha ao selecionar tipo de partida")
 
     def rampa_velocidade(self,valor):
@@ -118,11 +127,11 @@ class Atuacao(Popup):
             Define a velocidade do motor em termos de frequência (Hz) a partir a mudança do Slider        
         """
         self._modbusCliente.write_single_register(self.addr_hz,valor)
-        print(valor)        
+        print(valor,self.addr_hz)        
         
 
     def controla_partida(self,aciona):
-        if (aciona == 0):
+        if (aciona == 0 and self.cond_desl == True):
             self._modbusCliente.write_single_register(self.addr,aciona)
             self.ids.coluna_velocidade.opacity = 0
             self.ids.coluna_velocidade.disable = False
@@ -130,19 +139,24 @@ class Atuacao(Popup):
             self.ids.slider_velocidade.disable = False
             self.addr = None
             self.addr_hz = None
-            self.estado_motor = 0
+            self.estado_motor = False
+            self.cond_liga = True
+            self.cond_desl = False            
             print("Motor desligado")
-        elif(aciona == 1):
+        elif(aciona == 1 and self.cond_liga == True):
             self._modbusCliente.write_single_register(self.addr,aciona)
-            self.estado_motor = 1
+            self.estado_motor = True
+            self.cond_liga = False
+            self.cond_desl = True
             print("Motor ligado")
         elif(aciona == 2):
             self._modbusCliente.write_single_register(self.addr,aciona)
             print("Motor resetado")
     
-    def estado_motor_conticao(self):
-        return (self.estado_motor)
-        
+    def est_motor(self):
+        return self.estado_motor
+
+      
 
 class Medicao(Popup):
     """
@@ -150,10 +164,6 @@ class Medicao(Popup):
     """
     def __init__(self, **kwargs):
         super().__init__()
-
-
-
-
 class Graficos(Popup):
     """
         Classe que irá abrir a janela dos gráficos
@@ -166,7 +176,8 @@ class Graficos(Popup):
             'current': ['bc.corrente_r', 'bc.corrente_s', 'bc.corrente_n', 'bc.corrente_t', 'bc.corrente_media'],
             'voltage': ['bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'],
             'power': ['bc.ativa_r', 'bc.ativa_s', 'bc.ativa_t', 'bc.ativa_total'],
-            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr']
+            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr'],
+            'temperature': ['bc.temp_r', 'bc.temp_s', 'bc.temp_t', 'bc.temp_carc']
         }
 
         # Criar LinePlot para cada tag, mas não adicionar ao gráfico ainda
@@ -205,6 +216,11 @@ class Graficos(Popup):
             self.ids.graph.ylabel = 'THD [%]'
             self.ids.graph.ymax = 100
             self.ids.graph.y_ticks_major = 20
+        elif self.ids.graph.temp_visible:
+            active_type = 'temperature'
+            self.ids.graph.ylabel = 'Temp [°C]'
+            self.ids.graph.ymax = 100
+            self.ids.graph.y_ticks_major = 20
 
         # Remover todos os plots do gráfico
         for plot in self.ids.graph.plots[:]:  # Usar cópia para evitar modificação durante iteração
@@ -236,29 +252,18 @@ class Graficos(Popup):
                     legend_item.add_widget(color_box)
                     legend_item.add_widget(label)
                     self.ids.legend.add_widget(legend_item)
-
-
-                
-    
-        
 class LabeledCheckBoxDataGraph(BoxLayout):
     pass
 
-from kivy.uix.popup import Popup
-from kivymd.uix.selectioncontrol import MDCheckbox  # Ajuste conforme sua implementação de LabeledCheckBoxHistGraph
-
-class LabeledCheckBoxHistGraph(BoxLayout):  # Defina esta classe se não estiver em outro lugar
-    pass  # Implemente conforme necessário (ex.: com Label e Checkbox)
-
 class HistGraphPopup(Popup):
     def __init__(self, **kwargs):
-        # Extrai o argumento 'tags' de kwargs e define como atributo da classe
+        
         self.tags = kwargs.pop('tags', {})
         
-        # Chama o construtor da classe base com os kwargs restantes
+        
         super().__init__(**kwargs)
         
-        # Inicializa o conteúdo após o super().__init__
+        
         for key, value in self.tags.items():
             cb = LabeledCheckBoxHistGraph()
             cb.ids.label.text = key

@@ -255,3 +255,1849 @@ def update_graph_selection(self, tag_id, active):
         md_bg_color: [0.2, 0.2, 0.2, 1]
     Label:
         id: label
+
+
+
+Label aqui!!!
+
+FloatLayout:
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "30dp"
+                    padding: "10dp"                                
+                    size_hint: None, None
+                    size: "200dp", "150dp"
+                    pos_hint: {"x": 0.85, "y": 0.10}
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "5dp"
+                    padding: "10dp"
+                    size_hint: None, None
+                    size: "200dp", "150dp"
+                    pos_hint: {'x': 0.056, 'y': 0.56}
+                    MDLabel:
+                        text: "N?VEL INFERIOR"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "15dp"
+                    MDLabel:
+                        size_hint_y: None
+                        height: "20dp"
+                        color: 1, 1, 1, 1
+                        text: "XXX VA"
+                        halign: "center"
+                        canvas.before:
+                            Color:
+                                rgba: (0.165, 0.376, 0.647, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [12]
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: "5dp"
+                    padding: "10dp"
+                    size_hint: None, None
+                    size: "200dp", "150dp"
+                    pos_hint: {'x': 0.6, 'y': 0.90}
+                    MDLabel:
+                        text: "N?VEL SUPERIOR"
+                        halign: "center"
+                        size_hint_y: None
+                        height: "15dp"
+                    MDLabel:
+                        size_hint_y: None
+                        height: "20dp"
+                        color: 1, 1, 1, 1
+                        text: "XXX VA"
+                        halign: "center"
+                        canvas.before:
+                            Color:
+                                rgba: (0.165, 0.376, 0.647, 1)
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [12]
+
+15/08/2025
+from kivymd.app import MDApp
+from kivymd.uix.boxlayout import BoxLayout
+from kivymd.uix.screen import Screen
+from kivy.core.window import Window
+from kivy.lang.builder import Builder
+from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao, Graficos, HistGraphPopup
+from pyModbusTCP.client import ModbusClient
+from threading import Thread
+from time import sleep
+from kivy.clock import Clock
+from biblioteca_tags import Biblioteca_tags
+from datetime import datetime
+from random import random
+from timeseriesgraph import TimeSeriesGraph
+from modulopersistencia import ModbusPersistencia
+from kivy_garden.graph import LinePlot
+from pymodbus.client.mixin import ModbusClientMixin
+import math
+
+
+
+class MainWidget(Screen):
+    """
+        Classe que contr?i a interface gr?fica do supervis?rio com imagens,
+        bot?es, caixas de textos, popup e etc...
+    """
+    _update_thread = None
+    _atualiza = True
+    _max_points = 20
+
+    def __init__(self,**kwargs):
+        """
+            Construtor princial da classe MainWidget.
+        """
+        super().__init__()
+
+        #kwargs ser? usado para permitir in?meras passagens de vari?vel de argumentos nomeados,
+        #devem ser usados os mesmos nomes para n?o haver erros ou conflitos
+        self._scan_time = kwargs.get('scan_timemain')
+        self._ip = kwargs.get('ipmain')
+        self._porta = kwargs.get('portamain')
+        self._meas = {}
+        self._meas['timestamp'] = None
+        self._meas['values'] = {}
+        self.dic_cores = {}
+        self.dic_exemplo = {}
+        self._j_medidas = Medicao()
+        self._selected_tags = []
+
+        #BIBLIOTECA DAS TAGS - FILTRAR? AS TAGS NECESS?RIAS QUE SER?O USADAS
+        self._tags_importada = Biblioteca_tags().get_tags()
+        for tag in self._tags_importada:
+            nome = tag['nome']
+            addr = tag['address']
+            tipo = tag['tipo_modbus']
+            """if nome == 'bc.lit01':
+                self.dic_cores[nome] = {'address': addr, 'color': plot_color ==(0,1,0,1),'tipo_modbus': tipo}"""
+            if nome in self._j_medidas.ids:
+                if (nome == 'bc.corrente_r'):
+                    plot_color = (1, 0, 0, 1)
+                else:
+                    plot_color = (random(), random(), random(), 1)
+                self.dic_cores[nome] = {'address': addr, 'color': plot_color,'tipo_modbus': tipo}
+                tags_validas = [
+                    'bc.corrente_media', 'bc.ativa_total', 'bc.reativa_total',
+                    'bc.aparente_total', 'bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'
+                ]
+                if nome.startswith("bc.temp_") or nome in tags_validas:
+                    self.dic_exemplo[nome] = {'address': addr, 'color': plot_color, 'tipo_modbus': tipo}              
+
+        #Chamada das janelas segund?rias (popup) j? definido os valores nas linhas 23,24 e 25
+        self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
+        self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
+        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
+        self._j_medidas = Medicao()
+        self._j_graficos = Graficos(self._max_points, self.dic_cores)
+        self._j_histgraph = HistGraphPopup(tags=self.dic_exemplo)
+        self._histdados = ModbusPersistencia(scantime=self._scan_time)
+
+        #criando a conex?o MODBUS-TCP
+        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
+    
+    
+    #VISTO       
+    def desconectar(self):
+        """
+            M?todo que desconectar? o supervis?rio da rede MODBUS
+        """
+        self._modbusCliente.close()
+        Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
+        Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
+        Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
+        Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
+        self._atualiza = False 
+
+    #VISTO
+    def conf_scan_time(self, time):
+        """
+            M?todo que configura o tempo de varredura
+        """
+        self._scan_time = time
+        print("Scantime configurado: ",self._scan_time)   
+
+
+    def start_atendimento(self, ip_digitado, porta_digitado):
+        """
+            M?todo que inicia a conex?o do servidor, configura o endere?o de ip
+            e a porta de CLP. Al?m disso inicia uma thread para leitura de dados
+            e atualiza??o de imagens da interface gr?fica.
+        """
+        self._ip = ip_digitado
+        self._porta = porta_digitado
+        self._modbusCliente.host = self._ip
+        self._modbusCliente.port = self._porta
+        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
+
+        try:
+            Window.set_system_cursor('wait')
+            self._modbusCliente.open()
+            Window.set_system_cursor('arrow')
+
+            if self._modbusCliente.is_open:
+                self._atualiza = True
+                self.estado_motor = None
+                self.ids.img_con.source = "img/con_on.png"
+                self.ids.label_con.color = (0, 1, 0, 1)
+                self.ids.label_con.text = "[b]CONECTADO[/b]"
+                self._j_modbusPopup.dismiss()
+
+                #EVITAR MULTIPLAS THREADS DE MESMO TRABALHO
+                if self._update_thread is None or not self._update_thread.is_alive():
+                    self._update_thread = Thread(target=self.update)
+                    self._update_thread.start()
+            else:
+                self._j_modbusPopup.set_aviso("Falha na conex?o com o servidor.")
+        except Exception as erro:
+            self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}")
+
+
+    def update(self):
+        """
+            M?todo que far? leitura peri?dica e atualiza??o da interface
+            com base na conectividade com o CLP via Modbus.
+        """
+        try:
+            while self._atualiza:
+                try:
+                    #CAPTA??O DE ERRO
+                    resultado = self._modbusCliente.read_holding_registers(0, 1)
+                    if resultado is None:
+                        raise Exception("Sem resposta do servidor")
+                    
+                    #MUDAN?A DO MOTOR:
+                    if(self._j_atuacao.est_motor()):
+                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_on (1).png"))
+                    else:
+                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_off (1).png"))
+
+                    #CAPTA??O DE DADOS    
+                    self.read_datas()
+                    self.updateGUI()
+                    self._histdados.guardar_dados(self._meas)
+
+                    #TEMPO DE VARREDURA, DIVIDIDO POR 1000 POIS A ENTRADA ? EM ms
+                    sleep(self._scan_time/1000)
+
+                except Exception as erro:
+                    print("Erro: ",erro.args)
+                    self._modbusCliente.close()
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
+                    Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
+                    Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
+                    Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
+                    self._atualiza = False                
+        except Exception as erro:
+            Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso(f"ERRO: {erro.args}"))
+        finally:
+            #SERVIR? PARA LIBER? O ESPA?O NA MEM?RIA PARA CRIA UMA NOVA THREAD PARA CONEX?O FURURAS
+            self._update_thread = None
+    
+    def read_datas(self):
+        """
+            M?todo para leitura no meio do protocolo modbus
+        """
+        self._meas['timestamp'] = datetime.now()
+
+        for tag in self.dic_cores:
+            endere?o = self.dic_cores[tag]['address']
+            tipo_modbus = self.dic_cores[tag]['tipo_modbus']
+            
+            if tipo_modbus == '4x':
+                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endere?o, 1)[0]
+            elif tipo_modbus == 'FP':
+                self._meas['values'][tag] = self.leitura_fp(endere?o)
+            
+            
+            """elif tipo_modbus == '4x_bit':
+                bit_pos = tag_info.get('bit_pos', 0)  # Pega a posi??o do bit, default 0
+                self._meas['values'][tag] = self.leitura_binario(endere?o, bit_pos)
+
+
+
+
+                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endere?o,1)[0]"""
+            
+            
+            """for dict in self._tags_importada:
+                if dict['nome'] == tag:
+                    if dict['tipo_modbus'] == '4x':
+                        self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endere?o,1)[0]
+                    if dict['tipo_modbus'] == 'fp':
+                        self._meas['values'][tag] = self.leitura_fp(endere?o)
+                    if dict['tipo_modbus'] == '4x_bit':
+                        self._meas['values'][tag] = self.leitura_binario(endere?o, dict['bit_pos'])"""
+    
+    def leitura_fp(self, addr):
+        puxada = self._modbusCliente.read_holding_registers(addr,2)
+        tipo = ModbusClientMixin.DATATYPE.FLOAT32
+        dados = ModbusClientMixin.convert_from_registers(puxada, data_type=tipo,word_order='little')
+        return dados
+
+    def leitura_binario(self, addr, bit_pos):
+        puxada = self._modbusCliente.read_holding_registers(addr, 1)
+        if puxada:
+            bits = ModbusClientMixin.convert_from_registers(puxada, data_type=ModbusClientMixin.DATATYPE.BITS, wordorder='little')
+            return 1 if bits[bit_pos] else 0
+        return None
+    
+    def updateGUI(self):
+        """
+            M?todo para atualiza??o da interface gr?fica a partir dos dados lidos
+        """
+
+
+
+        for tag in self.dic_cores:
+
+            #N?VEL DO RESERVAT?RIO SUPERIOR EM %
+            """if tag == 'bc.lit01':
+                self.ids.nivel_agua_superior.value = float(self._meas['values'][tag])
+                print(self.ids.nivel_agua_superior.value)"""
+
+            # ATUALIZA??O DAS LABEL
+            if tag in self._j_medidas.ids:
+                if "corrente" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' A'
+                elif "tensao" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' V'
+                elif tag.startswith("bc.ativa_"):
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' W'
+                elif tag.startswith("bc.reativa_"):
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VAr'
+                elif "aparente" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' VA'
+                elif "bc.fp_" in tag:
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag])
+                elif "bc.temp":
+                    self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' °C'
+                elif tag == 'bc.lit01':
+                    self.ids.nivel_agua_superior.value = float(self._meas['values'][tag])
+                    print(self._meas['values'][tag])
+            else:
+                continue
+        
+        # ATUALIZA??O DO GR?FICO
+        tag_types = {
+            'current': ['bc.corrente_r', 'bc.corrente_s', 'bc.corrente_n', 'bc.corrente_t', 'bc.corrente_media'],
+            'voltage': ['bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'],
+            'power': ['bc.ativa_r', 'bc.ativa_s', 'bc.ativa_t', 'bc.ativa_total'],
+            'thd': ['bc.thd_tensao_sn', 'bc.thd_tensao_rn', 'bc.thd_tensao_tn', 'bc.thd_tensao_rs', 'bc.thd_tensao_st', 'bc.thd_tensao_tr'],
+            'temperature': ['bc.temp_r', 'bc.temp_s', 'bc.temp_t', 'bc.temp_carc']
+        }
+        
+        #DETERMINAR QUAL TIPO DE DADO EST? ATIVO
+        if self._j_graficos.ids.graph.current_visible:
+            tags_to_plot = tag_types['current']
+        elif self._j_graficos.ids.graph.voltage_visible:
+            tags_to_plot = tag_types['voltage']
+        elif self._j_graficos.ids.graph.power_visible:
+            tags_to_plot = tag_types['power']
+        elif self._j_graficos.ids.graph.thd_visible:
+            tags_to_plot = tag_types['thd']
+        elif self._j_graficos.ids.graph.temp_visible:
+            tags_to_plot = tag_types['temperature']
+        else:
+            tags_to_plot = []
+
+        # Atualizar o gr?fico apenas para as tags v?lidas
+        valid_tags = [tag for tag in tags_to_plot if tag in self._meas['values'] and tag in self.dic_cores]
+        for i, tag in enumerate(valid_tags):
+            self._j_graficos.ids.graph.updateGraph((self._meas['timestamp'], self._meas['values'][tag]), i)
+
+    def update_graph_selection(self, tag_id, active):
+        """Atualiza a lista de tags selecionadas com base no estado do CheckBox."""
+        if active and tag_id not in self._selected_tags:
+            self._selected_tags.append(tag_id)
+        elif not active and tag_id in self._selected_tags:
+            self._selected_tags.remove(tag_id)
+        print(f"Tags selecionadas: {self._selected_tags}")
+
+
+    def read_data(self,a,b):
+        """
+            M?todo que coleta as informa??es da interface fornecidas pelo usu?rio e requisita a busta no BD
+        """
+        try:
+            init_t = self._histdados.parseDTString(a)
+            final_t = self._histdados.parseDTString(b)
+            cols = self._selected_tags
+            
+            if init_t is None or final_t is None or len(cols) == 0:
+                return
+            cols.append('timestamp')
+
+            dados = self._histdados.acesso_dados_historicos(init_t, final_t, cols)
+            print(dados)
+            self._j_histgraph.ids.graph.clearPlots()
+
+            for key, value in dados.items():
+                if key == 'timestamp':
+                    continue
+                p = LinePlot(line_width=1.5, color=self.dic_cores.get(key, {'color': (0, 0, 1, 1)})['color'])
+                p.points = [(i, value[i]) for i in range(len(value))] 
+                self._j_histgraph.ids.graph.add_plot(p)
+            
+            self._j_histgraph.ids.graph.xmax = len(dados['timestamp']) - 1  
+            self._j_histgraph.ids.graph.update_x_labels(dados['timestamp'])
+
+        except Exception as erro:
+            print("Erro: ", erro.args)    
+
+          
+    
+class MainWidgetApp(MDApp):
+    """
+        Classe principal de desing da aplica??o KivyMD.
+
+        Esta classe herda de MDApp e ? respons?vel por configurar e iniciar
+        a interface gr?fica do supervis?rio. Ou seja ela define a estrutura principal
+        da aplica??o, incluindo a inicializa??o de temas e a constru??o da tela.
+    """     
+    def build(self):
+        """M?todo que gera a janela matriz do Widget principal"""
+        self.theme_cls.theme_style = 'Light'
+        self.theme_cls.primary_palette = 'Gray'
+        self.theme_cls.primary_hue = "500"
+        self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
+        Window.maximize()        
+        return self.widget
+
+
+
+
+
+        #:kivy 2.0.0
+#TUDO VISTO
+<MainWidget>:
+    BoxLayout:
+        orientation: 'vertical'
+        md_bg_color: 0,8588235294117647, 0,8588235294117647, 0,8588235294117647
+        #BARRA SUPERIOR
+        MDTopAppBar:
+            orientation: 'horizontal'
+            elevation: 2
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: None, None
+                size: "120dp", "50dp"
+                spacing: "4dp"
+                Label:
+                    id: label_con
+                    text: "[b]DESCONECTADO[/b]"
+                    markup: True
+                    color: (1, 0, 0, 1)
+                    font_size: "12sp"
+                    halign: "center"
+                    size_hint_y: 0.4
+                Image:
+                    id: img_con
+                    source: "img/con_off.png"
+                    allow_stretch: True
+                    keep_ratio: True
+                    size_hint: (1, 0.6)                                
+
+        FloatLayout:
+            size_hint: (1, 1)
+            Image:
+                # IMAGEM DE FUNDO DO SUPERVIS?RIO (DUAS CAIXA D'?GUA)
+                source: "img/base_supervisorio.png"
+                allow_stretch: True
+                keep_ratio: False
+                size_hint: (1, 1)
+                pos_hint: {"center_x": 0.5, "center_y": 0.5}
+
+            #BARRA DE PROGRESSO DA CAIXA D'?GUA INFERIOR
+            BoxLayout:                 
+                orientation: 'vertical'
+                size_hint: (0.018, 0.295)
+                pos_hint: {'x': 0.255, 'y': 0.27}
+                padding: "5dp"
+                canvas.before:
+                    Color:
+                        rgba: (0.4, 0.4, 0.4, 0.5)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                MDProgressBar:
+                    id: nivel_agua_inferior
+                    orientation: 'vertical'
+                    value: 2  # VALOR DEVE SER MODIFICADO EM TEMPO REAL(N?O ESQUE?A!)
+                    max: 100
+                    color: (0, 0, 1, 1)
+                    size_hint: (1, 1)
+
+            BoxLayout:
+                # BARRA DE PROGRESSO DA CAIXA D'?GUA SUPERIOR
+                orientation: 'vertical'
+                size_hint: (0.018, 0.295)
+                pos_hint: {'x': 0.745, 'y': 0.497}
+                padding: "5dp"
+                canvas.before:
+                    Color:
+                        rgba: (0.4, 0.4, 0.4, 1)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                MDProgressBar:
+                    id: nivel_agua_superior
+                    orientation: 'vertical'
+                    value: 80  # VALOR DEVE SER MODIFICADO EM TEMPO REAL(N?O ESQUE?A!)
+                    max: 100
+                    color: (0, 0, 1, 1)
+                    size_hint: (1, 1)
+
+            Image:
+                id: img_motor 
+                source: "img/Motor_off (1).png"  
+                keep_ratio: False
+                size_hint: (0.7,0.7)
+                pos_hint: {"x": 0.2028, "y": -0.0485}
+
+            # CARDS DE DADOS
+                #ESPA?O RESERVADO PARA OS CARDS
+            #FIM CARDS DE DADOS
+
+            # BOT?ES DE COMANDO PARTE INFERIOR
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: (1, 0.1)  
+                pos_hint: {'center_x': 0.5, 'y': 0} 
+                padding: "5dp"
+                spacing: "5dp"
+
+            #BOT?O DE CONEX?O MODBUS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_conection
+                    on_release: root._j_modbusPopup.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "connection"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "CONEX?O MODBUS"
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1)
+
+            #BOT?O TEMPO DE VARREDURA
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_time
+                    on_release: root._j_scanPopup.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "clock"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: 'SCAN TIME'
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1) 
+
+            #BOT?O ATUA??O
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_comando
+                    on_release: root._j_atuacao.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "engine-outline"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: 'ATUA??O'
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1)
+
+            #BOT?O MEDI??ES
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_m_eletrica
+                    on_release: root._j_medidas.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "ruler-square-compass"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "MEDI??ES"
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1) 
+
+            #BOT?O GRAFICOS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: botao_temperatura
+                    on_release: root._j_graficos.open()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "chart-line"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "GR?FICOS"
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1)          
+            
+            
+            #HIST?RIOC DE DADOS
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    id: bt_data
+                    on_release: root._j_histgraph.open()  
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "history"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "HIST?RICO"
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1)
+            #SAIR
+                MDRaisedButton:
+                    size_hint: (0.05, 1)
+                    size: "100dp", "30dp"
+                    on_release:
+                        on_release: root.desconectar()
+                        app.stop()
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        padding: "5dp"
+                        spacing: "5dp"
+                        IconLeftWidget:
+                            icon: "logout"  
+                            size_hint: (0.4, 1)
+                        MDLabel:
+                            text: "SAIR"
+                            bold: True
+                            halign: "center"
+                            size_hint: (0.6, 1)
+
+
+
+
+
+                            #:kivy 2.0.0
+#VISTO
+<Modbus_Popup>:
+    title: "Conex?o MODBUS"
+    background_color: 0, 0, 0, 0.3
+    size_hint_x: 0.3
+    size_hint_y: 0.25
+    height: "180dp"
+    auto_dismiss: True
+    BoxLayout:
+        id: layout1
+        orientation: 'vertical'
+        padding: "5dp"
+        spacing: "5dp"
+        MDTextFieldRect:
+            id: entrada_ip
+            hint_text: "Digite o IP"
+            mode: "rectangle"
+            size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1  
+        
+        MDTextFieldRect:
+            id: entrada_porta
+            text: ""
+            hint_text: "Digite o n?mero porta"
+            mode: "rectangle"
+            size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1 
+
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: "10dp"
+            size_hint_y: None
+            height: "40dp"
+
+            MDRaisedButton:
+                id:bt_con_descon
+                text: "Conectar"
+                size_hint_x: 0.5
+                md_bg_color: 0.7, 0.8, 1, 1 
+                text_color: 0, 0, 0, 1
+                on_release:
+                    app.root.start_atendimento(entrada_ip.text,int(entrada_porta.text)) 
+                    print(app.root.start_atendimento) 
+            MDRaisedButton:
+                text: "Desconectar"
+                size_hint_x: 0.5
+                on_release: 
+                    app.root.desconectar()
+                    root.dismiss()
+                md_bg_color: 0.7, 0.8, 1, 1
+                text_color: 0, 0, 0, 1
+
+#VISTO
+<Scan_Popup>:
+    title: "Configura??o do Scan time"
+    size_hint_x: 0.4
+    size_hint_y: None
+    height: "170dp"
+    background_color: 0, 0, 0, 0.3
+    auto_dismiss: True    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+        MDTextFieldRect:
+            id: entrada_time
+            hint_text: "Digite o tempo de varredura [ms]"
+            helper_text_mode: "on_focus"
+            mode: "rectangle"  
+            size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
+            text_color: 0, 0, 1, 1
+            line_color_normal: 0.6, 0.6, 0.6, 1
+            fill_color: 1, 1, 1, 1 
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: "10dp"
+            size_hint_y: None
+            height: "40dp"        
+            MDRaisedButton:
+                text: "Confirmar"
+                size_hint_x: 0.5
+                md_bg_color: 0.7, 0.8, 1, 1 
+                text_color: 0, 0, 0, 1
+                on_release: 
+                    app.root.conf_scan_time(int(entrada_time.text))
+                    root.dismiss()
+#PARCIALMENTE VISTO
+<Atuacao>:
+    size_hint: 0.5, 0.55  
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3  
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+
+        MDTopAppBar:
+            title: 'Atua??o/Controle'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+    
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: "10dp"
+            padding: "10dp"
+
+            # Coluna 1 - COMANDO BOMBA D'?GUA
+            MDCard:
+                orientation: "vertical"
+                padding: "12dp"
+                spacing: "10dp"
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1  
+                radius: [20, 20, 20, 20]  
+                elevation: 4  
+
+                Label:
+                    text: "COMANDO BOMBA D'?GUA"
+                    halign: "center"
+                    color: 0,0,0
+
+                MDRaisedButton:
+                    id: bt_liga_motor
+                    text: "LIGAR MOTOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1                    
+                    on_release: root.controla_partida(1)
+
+                MDRaisedButton:
+                    id: bt_desliga_motor
+                    text: "DESLIGAR MOTOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.controla_partida(0) 
+
+                MDRaisedButton:
+                    id:bt_reset
+                    text: "RESET"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.controla_partida(2)
+
+            # Coluna 2 - TIPO DE PARTIDA
+            MDCard:
+                orientation: "vertical"
+                padding: "12dp"
+                spacing: "10dp"
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1  
+                radius: [20, 20, 20, 20]  
+                elevation: 4
+
+                Label:
+                    text: "SELECIONAR TIPO DE PARTIDA"
+                    halign: "center"
+                    color: 0,0,0
+
+                MDRaisedButton:
+                    id: bt_pt_direta
+                    text: "TESYS DIRETA"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.selecionar_partida(1324,3)
+                MDRaisedButton:
+                    id: bt_pt_inversor
+                    text: "ATV31 INVERSOR"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.selecionar_partida(1324,2)
+                MDRaisedButton:
+                    id: bt_pt_soft
+                    text: "ATS48 SOFT-START"
+                    pos_hint: {"center_x": 0.5}
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.selecionar_partida(1324,1)
+            
+            # Coluna 3 - MUDAN?A DE VELOCIDADE
+            MDCard:
+                orientation: "vertical"
+                padding: "16dp"
+                spacing: "12dp"
+                size_hint: None, None
+                size: "220dp", "260dp"
+                md_bg_color: 0.85, 0.85, 0.85, 1
+                radius: [20, 20, 20, 20]
+                elevation: 4
+
+                Label:
+                    text: "MUDAN?A DE VELOCIDADE"
+                    halign: "center"
+                    color: 0,0,0
+
+                BoxLayout:
+                    orientation: "horizontal"
+                    id: coluna_velocidade
+                    opacity: 0
+                    disable: True
+                    spacing: "12dp"
+                    size_hint_y: None
+                    height: "120dp"
+                    
+                    MDSlider:
+                        id: slider_velocidade
+                        opacity: 0
+                        disable: True
+                        min: 0
+                        max: 60
+                        value: 0
+                        orientation: 'vertical'
+                        size_hint_x: None
+                        width: "20dp"
+                        height: "180dp"
+                        pos_hint: {"center_y": 0.5}
+                        on_value: root.rampa_velocidade(int(self.value))
+                    BoxLayout:
+                        orientation: "vertical"
+                        spacing: "8dp"
+                        size_hint_x: 1
+                        MDTextField:
+                            id: entrada_acel
+                            text:""
+                            hint_text: "Acelera??o (s)"
+                            mode: "rectangle"
+                            size_hint_y: None
+                            height: "36dp"
+                        MDTextField:
+                            id: entrada_decel
+                            text:""
+                            hint_text: "Desacelera??o (s)"
+                            mode: "rectangle"
+                            size_hint_y: None
+                            height: "36dp"
+
+                Label:
+                    text: f"Velocidade: {int(slider_velocidade.value)} Hz"
+                    halign: "center"
+                    color: 0,0,0
+                    size_hint_y: None
+                    height: "24dp"
+
+<Medicao>:
+    size_hint: 0.8, 0.75  
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3  
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "10dp"
+        spacing: "10dp"
+
+        MDTopAppBar:
+            title: 'Medi??es El?tricas'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+
+        MDBottomNavigation:
+            panel_color: 0.25, 0.25, 0.25, 0.3
+        #BLOCO DAS MEDI??ES DE CORRENTE
+            MDBottomNavigationItem:
+                name: 'screen 1'
+                text: 'Medi??o de corrente'
+                icon: 'alpha-a-box'
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase R'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_r
+                                    text: 'XXX A'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase S'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_s
+                                    text: 'XXX A'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente na fase T'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_t
+                                    text: 'XXX A'
+                                    halign: 'right'
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente no Neutro'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_n
+                                    text: 'XXX A'
+                                    halign: 'right'
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'Corrente m?dia'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.corrente_media
+                                    text: 'XXX A'
+                                    halign: 'right'
+        #BLOCO DAS MEDI??ES DE TENS?ES
+            MDBottomNavigationItem:
+                name: 'screen 2'
+                text: 'Medi??o de tens?o'
+                icon: 'alpha-v-box'
+
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase R e S'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.tensao_rs
+                                    text: 'XXX V'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase S e T'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.tensao_st
+                                    text: 'XXX V'
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'ddp entre a fase T e R'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.tensao_tr
+                                    text: 'XXX V'
+                                    halign: 'right'
+        #BLOCO DA MEDI??O DE POT?NCIA            
+            MDBottomNavigationItem:
+                name: 'screen 3'
+                text: 'Medi??o de pot?ncia'
+                icon: 'alpha-w-box'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Aparente na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.aparente_r
+                                        text: 'XXX VA'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Aparente na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.aparente_s
+                                        text: 'XXX VA'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Aparente na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.aparente_t
+                                        text: 'XXX VA'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Aparente total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.aparente_total
+                                        text: 'XXX VA'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Reativa na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.reativa_r
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Reativa na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.reativa_s
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Reativa na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.reativa_t
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Reativa total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.reativa_total
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Ativa na Fase R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.ativa_r
+                                        text: 'XXX W'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Ativa na Fase S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.ativa_s
+                                        text: 'XXX W'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Ativa na Fase T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.ativa_t
+                                        text: 'XXX W'
+                                        halign: 'right'
+                            MDCard:
+                                size_hint: None, None
+                                size: "350dp", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Pot?ncia Ativa total'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.ativa_total
+                                        text: 'XXX W'
+                                        halign: 'right'           
+        #BLOCO DA MEDI??O DE FP    
+            MDBottomNavigationItem:
+                name: 'screen 4'
+                text: 'Fator de Pot?ncia'
+                icon: 'math-cos'
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        padding: "20dp"
+                        spacing: "30dp"
+                        adaptive_height: True
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase R'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.fp_r
+                                    text: 'XXX '
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase S'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.fp_s
+                                    text: 'XXX '
+                                    halign: 'right'
+
+                        MDCard:
+                            size_hint: None, None
+                            size: "500dp", "60dp"
+                            pos_hint: {"center_x": 0.5}
+                            radius: [15, 15, 15, 15]
+                            elevation: 4
+                            padding: "10dp"
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: "20dp"
+                                MDLabel:
+                                    text: 'FP na fase T'
+                                    halign: 'left'
+                                MDLabel:
+                                    id: bc.fp_t
+                                    text: 'XXX '
+                                    halign: 'right'
+        #BLOCO DA MEDI??O DE THD    
+            MDBottomNavigationItem:
+                name: 'screen 5'
+                text: 'Medi??o THD de Tens?o'
+                icon: 'sine-wave'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase S e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd_tensao_sn
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase R e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd_tensao_rn
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase T e Neutro'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd_tensao_tn
+                                        text: 'XXX V'
+                                        halign: 'right'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase R e S'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd_tensao_rs
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase S e T'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd_tensao_st
+                                        text: 'XXX V'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Medida THD Tens?o entre fase T e R'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.thd tensao_tr
+                                        text: 'XXX VAr'
+                                        halign: 'right'
+        #BLOCO DA MEDI??O TEMPERATURA    
+            MDBottomNavigationItem:
+                name: 'screen 6'
+                text: 'Temperatura'
+                icon: 'thermometer'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento R Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_r
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento S Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_s
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento T Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_t
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Carca?a'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_carc
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            
+#PARCIALMENTE VISTO 
+<Graficos>:
+    size_hint: 0.8, 0.80
+    auto_dismiss: True
+    background_color: 0, 0, 0, 0.3
+
+    FloatLayout:
+        orientation: 'vertical'
+        MDTopAppBar:
+            title: 'Gr?ficos'
+            md_bg_color: .2, .2, .2, 1
+            specific_text_color: 1, 1, 1, 1
+            right_action_items: [["close", lambda x: root.dismiss()]]
+            pos_hint: {'top': 1, 'right': 1}
+
+        TimeSeriesGraph:
+            id: graph
+            xlabel: 'Hor?rio [s]'
+            ylabel: 'Amper [A]'
+            background_color: 0.5, 0.5, 0.5, 0.5
+            x_ticks_minor: 1
+            x_ticks_major: 5
+            y_ticks_major: 40
+            y_grid_label: True
+            x_grid_label: True
+            padding: 5
+            x_grid: True
+            y_grid: True
+            xmin: 0
+            ymin: 0
+            ymax: 200
+            size_hint: 0.7, 0.58
+            pos_hint: {'center_x': 0.35, 'center_y': 0.6}
+            current_visible: current_checkbox.active
+            voltage_visible: voltage_checkbox.active
+            power_visible: power_checkbox.active
+            thd_visible: thd_checkbox.active
+            temp_visible: temp_checkbox.active
+
+        BoxLayout:
+            id: legend
+            orientation: 'vertical'
+            size_hint: 0.2, 0.58
+            pos_hint: {'right': 0.95, 'center_y': 0.6}
+            canvas.before:
+                Color:
+                    rgba: 0.2, 0.2, 0.2, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+            spacing: 10
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 1, 0.6
+                Label:
+                    size_hint: 0.3, 1
+                    text: 'N?mero de pontos do gr?fico'
+                LabeledCheckBoxDataGraph:
+                    id: mp20
+                    on_kv_post:
+                        self.ids.label.text = '20'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.active = True
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+                LabeledCheckBoxDataGraph:
+                    id: mp50
+                    on_kv_post:
+                        self.ids.label.text = '50'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+                LabeledCheckBoxDataGraph:
+                    id: mp100
+                    on_kv_post:
+                        self.ids.label.text = '100'
+                        self.ids.checkbox.group = 'cd_group'
+                        self.ids.checkbox.md_bg_color = [0.2, 0.2, 0.2, 1]
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: 1, 0.4
+                Button:
+                    text: "Fechar"
+                    size_hint: 0.2, 1
+                    md_bg_color: 0.7, 0.8, 1, 1
+                    text_color: 0, 0, 0, 1
+                    on_release: root.dismiss()
+                BoxLayout:
+                    orientation: 'horizontal'
+                    CheckBox:
+                        id: current_checkbox
+                        group: 'graph_type'
+                        active: True
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.current_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Corrente'
+                    CheckBox:
+                        id: voltage_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.voltage_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Tens?o'
+                    CheckBox:
+                        id: power_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.power_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Pot?ncia'
+                    CheckBox:
+                        id: thd_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.thd_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Tens?o THD'
+                    CheckBox:
+                        id: temp_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.temp_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Temperatura'
+
+<LabeledCheckBoxDataGraph>:
+    orientation: 'horizontal'
+    size_hint: (0.1, 1)
+    CheckBox:
+        id: checkbox
+        on_active: 
+            app.root._j_graficos.ids.graph.setMaxPoints(int(self.parent.ids.label.text), 0) if app.root is not None else None
+        md_bg_color: [0.2, 0.2, 0.2, 1]
+    Label:
+        id: label
+
+<HistGraphPopup>:
+    title: "Hist?rico de Temperatura na Refinaria"
+    BoxLayout:
+        orientation: 'vertical'
+        TimeSeriesGraph:
+            id: graph
+            xlabel: 'Hor?rio'
+            ylabel: 'Temperatura [°C]'
+            background_color: 0.5, 0.5, 0.5, 0.5
+            x_ticks_minor: 1
+            x_ticks_major: 5
+            y_ticks_minor: 100
+            y_ticks_major: 100
+            y_grid_label: True
+            x_grid_label: True
+            padding: 5
+            x_grid: True
+            y_grid: True
+            xmin: 0
+            xmax: 0
+            ymin: 0
+            ymax: 500
+        BoxLayout:
+            id: sensores
+            orientation: 'horizontal'
+            size_hint: (1, 0.1)
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint: (1, 0.1)
+            Label:
+                text: 'Timestamp inicial \r\n [size=12] (DD/MM/AAAA HH:MM :SS)[/size]'
+                halign: 'center'
+                markup: True
+            TextInput:
+                id: txt_init_time
+                size_hint: (1, 0.8)
+                halign: 'center'
+                valign: 'middle'
+                multiline: False
+            Label:
+                text: 'Timestamp final \r\n [size=12] (DD/MM/AAAA HH:MM :SS)[/size]'
+                halign: 'center'
+                markup: True
+            TextInput:
+                id: txt_final_time
+                size_hint: (1, 0.8)
+                halign: 'center'
+                valign: 'middle'
+                multiline: False
+            Button:
+                text: "Atualizar"
+                size_hint: (1, 0.8)
+                on_release: app.root.read_data(root.ids.txt_init_time.text, root.ids.txt_final_time.text)
+
+<LabeledCheckBoxHistGraph>:
+    orientation: 'horizontal'
+    size_hint: (0.1, 1)
+    CheckBox:
+        id: checkbox
+        on_active: app.root.update_graph_selection(root.ids.label.text, self.active)
+        md_bg_color: [0.2, 0.2, 0.2, 1]
+    Label:
+        id: label
+
+   
+        
+    
+    

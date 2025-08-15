@@ -31,7 +31,19 @@ class ModbusPersistencia(object):
         self._tags_addrs = meas
         data = {}
         data['timestamp'] = self._tags_addrs['timestamp']
-        TAG_TO_DB = {'bc.corrente_r': 'corrente'}
+        TAG_TO_DB = {'bc.corrente_media': 'corrente_media', 
+                     'bc.tensao_rs':'tensao_rs',
+                     'bc.tensao_st':'tensao_st',
+                     'bc.tensao_tr':'tensao_tr',
+                     'bc.ativa_total':'potencia_ativa',
+                     'bc.reativa_total':'potencia_reativa',
+                     'bc.aparente_total':'potencia_aparente',
+                     'bc.temp_r':'temperatura_r',   
+                     'bc.temp_s':'temperatura_s',   
+                     'bc.temp_t':'temperatura_t',   
+                     'bc.temp_carc':'temperatura_superficie',
+                     }
+
         for tag, valor in self._tags_addrs['values'].items():
             if tag in TAG_TO_DB:
                 coluna = TAG_TO_DB[tag]
@@ -75,22 +87,41 @@ class ModbusPersistencia(object):
             print(f"Resultados formatados: {result_fmt_list}")  # Depuração
 
             # Exibir dados formatados (opcional)
-            print(tabulate(result_fmt_list, headers=['id', 'timestamp', 'corrente', 'tensao', 'potencia', 'thd']))
+            print(tabulate(result_fmt_list, headers=['id', 'timestamp', 'corrente_media', 'tensao_rs', 
+                                                     'tensao_st','tensao_tr', 'potencia_ativa', 'potencia_reativa',
+                                                     'potencia_aparente','temperatura_r', 'temperatura_s', 'temperatura_t',
+                                                     'temperatura_superficie']))
 
             # Converter para dicionário
             dados = {
                 'timestamp': [datetime.strptime(row[1], '%d/%m/%Y %H:%M:%S.%f') for row in result_fmt_list],
-                'corrente': [row[2] if row[2] is not None else None for row in result_fmt_list],
-                'tensao': [row[3] if row[3] is not None else None for row in result_fmt_list],
-                'potencia': [row[4] if row[4] is not None else None for row in result_fmt_list],
-                'thd': [row[5] if row[5] is not None else None for row in result_fmt_list]
+                'corrente_media': [row[2] if row[2] is not None else None for row in result_fmt_list],
+                'tensao_rs': [row[3] if row[3] is not None else None for row in result_fmt_list],
+                'tensao_st': [row[4] if row[4] is not None else None for row in result_fmt_list],
+                'tensao_tr': [row[5] if row[5] is not None else None for row in result_fmt_list],
+                'potencia_ativa':[row[6] if row[6] is not None else None for row in result_fmt_list], 
+                'potencia_reativa': [row[7] if row[7] is not None else None for row in result_fmt_list],
+                'potencia_aparente': [row[8] if row[8] is not None else None for row in result_fmt_list],
+                'temperatura_r': [row[9] if row[9] is not None else None for row in result_fmt_list], 
+                'temperatura_s': [row[10] if row[10] is not None else None for row in result_fmt_list], 
+                'temperatura_t': [row[11] if row[11] is not None else None for row in result_fmt_list],
+                'temperatura_superficie': [row[12] if row[12] is not None else None for row in result_fmt_list]
             }
             print(f"Dados antes do filtro: {dados}")  # Depuração
 
             # Mapeamento de tags para colunas
             tag_to_column = {
-                'bc.corrente_r': 'corrente',
-                # Adicione outros mapeamentos se necessário (ex.: 'bc.tensao' -> 'tensao')
+                'bc.corrente_media': 'corrente_media', 
+                'bc.tensao_rs':'tensao_rs',
+                'bc.tensao_st':'tensao_st',
+                'bc.tensao_tr':'tensao_tr',
+                'bc.ativa_total':'potencia_ativa',
+                'bc.reativa_total':'potencia_reativa',
+                'bc.aparente_total':'potencia_aparente',
+                'bc.temp_r':'temperatura_r',   
+                'bc.temp_s':'temperatura_s',   
+                'bc.temp_t':'temperatura_t',   
+                'bc.temp_carc':'temperatura_superficie'
             }
 
             # Filtrar apenas as colunas solicitadas, mapeando as tags
@@ -104,7 +135,10 @@ class ModbusPersistencia(object):
 
         except Exception as e:
             print("Erro durante a execução:", e.args)
-            return {'timestamp': [], 'corrente': [], 'tensao': [], 'potencia': [], 'thd': []}
+            return {'timestamp': [], 'corrente_media' : [], 'tensao_rs':[], 'tensao_st':[],
+                    'tensao_tr':[], 'potencia_ativa':[], 'potencia_reativa':[],
+                    'potencia_aparente':[],'temperatura_r':[], 'temperatura_s':[],
+                    'temperatura_t':[], 'temperatura_superficie':[]}
 
         finally:
             if lock_acquired:

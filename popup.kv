@@ -1,11 +1,12 @@
 #:kivy 2.0.0
-
+#VISTO
 <Modbus_Popup>:
     title: "Conexão MODBUS"
+    background_color: 0, 0, 0, 0.3
     size_hint_x: 0.3
     size_hint_y: 0.25
     height: "180dp"
-    auto_dismiss: False
+    auto_dismiss: True
     BoxLayout:
         id: layout1
         orientation: 'vertical'
@@ -41,6 +42,7 @@
             height: "40dp"
 
             MDRaisedButton:
+                id:bt_con_descon
                 text: "Conectar"
                 size_hint_x: 0.5
                 md_bg_color: 0.7, 0.8, 1, 1 
@@ -49,33 +51,37 @@
                     app.root.start_atendimento(entrada_ip.text,int(entrada_porta.text)) 
                     print(app.root.start_atendimento) 
             MDRaisedButton:
-                text: "Fechar"
+                text: "Desconectar"
                 size_hint_x: 0.5
-                on_release: root.dismiss()
+                on_release: 
+                    app.root.desconectar()
+                    root.dismiss()
                 md_bg_color: 0.7, 0.8, 1, 1
                 text_color: 0, 0, 0, 1
 
-
+#VISTO
 <Scan_Popup>:
     title: "Configuração do Scan time"
     size_hint_x: 0.4
     size_hint_y: None
     height: "170dp"
-    auto_dismiss: False    
+    background_color: 0, 0, 0, 0.3
+    auto_dismiss: True    
     BoxLayout:
         orientation: 'vertical'
         padding: "10dp"
         spacing: "10dp"
         MDTextFieldRect:
             id: entrada_time
-            text: ""
             hint_text: "Digite o tempo de varredura [ms]"
             helper_text_mode: "on_focus"
             mode: "rectangle"  
             size_hint_x: 1
+            radius: [15, 15, 15, 15]
+            text_color: 0, 0, 1, 0
             text_color: 0, 0, 1, 1
             line_color_normal: 0.6, 0.6, 0.6, 1
-            fill_color: 1, 1, 1, 1
+            fill_color: 1, 1, 1, 1 
         BoxLayout:
             orientation: 'horizontal'
             spacing: "10dp"
@@ -84,16 +90,12 @@
             MDRaisedButton:
                 text: "Confirmar"
                 size_hint_x: 0.5
+                md_bg_color: 0.7, 0.8, 1, 1 
+                text_color: 0, 0, 0, 1
                 on_release: 
-                    app.root._scan_time = int(entrada_time.text)
-                    #print(app.root._scan_time)
-                   
-            MDRaisedButton:
-                text: "Fechar"
-                size_hint_x: 0.5
-                on_release: root.dismiss()
-
-
+                    app.root.conf_scan_time(int(entrada_time.text))
+                    root.dismiss()
+#PARCIALMENTE VISTO
 <Atuacao>:
     size_hint: 0.5, 0.55  
     auto_dismiss: True
@@ -110,7 +112,6 @@
             specific_text_color: 1, 1, 1, 1
             right_action_items: [["close", lambda x: root.dismiss()]]
     
-
         BoxLayout:
             orientation: 'horizontal'
             spacing: "10dp"
@@ -136,21 +137,28 @@
                     id: bt_liga_motor
                     text: "LIGAR MOTOR"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1                    
                     on_release: root.controla_partida(1)
 
                 MDRaisedButton:
                     id: bt_desliga_motor
                     text: "DESLIGAR MOTOR"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
                     on_release: root.controla_partida(0) 
 
                 MDRaisedButton:
                     id:bt_reset
                     text: "RESET"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
+                    on_release: root.controla_partida(2)
 
             # Coluna 2 - TIPO DE PARTIDA
             MDCard:
@@ -172,19 +180,25 @@
                     id: bt_pt_direta
                     text: "TESYS DIRETA"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
                     on_release: root.selecionar_partida(1324,3)
                 MDRaisedButton:
                     id: bt_pt_inversor
                     text: "ATV31 INVERSOR"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
                     on_release: root.selecionar_partida(1324,2)
                 MDRaisedButton:
                     id: bt_pt_soft
                     text: "ATS48 SOFT-START"
                     pos_hint: {"center_x": 0.5}
-                    size_hint_x: 0.8
+                    size_hint_x: 0.7
+                    md_bg_color: 0.7, 0.8, 1, 1 
+                    text_color: 0, 0, 0, 1
                     on_release: root.selecionar_partida(1324,1)
             
             # Coluna 3 - MUDANÇA DE VELOCIDADE
@@ -861,7 +875,100 @@
                                         id: bc.thd tensao_tr
                                         text: 'XXX VAr'
                                         halign: 'right'
+        #BLOCO DA MEDIÇÃO TEMPERATURA    
+            MDBottomNavigationItem:
+                name: 'screen 6'
+                text: 'Temperatura'
+                icon: 'thermometer'
+                ScrollView:
+                    BoxLayout:
+                        orientation:'horizontal'
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
 
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento R Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_r
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento S Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_s
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            padding: "20dp"
+                            spacing: "30dp"
+                            adaptive_height: True
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Enrolamento T Motor'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_t
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            MDCard:
+                                size_hint: None, None
+                                size: "500", "60dp"
+                                pos_hint: {"center_x": 0.5}
+                                radius: [15, 15, 15, 15]
+                                elevation: 4
+                                padding: "10dp"
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: "20dp"
+                                    MDLabel:
+                                        text: 'Temperatura Carcaça'
+                                        halign: 'left'
+                                    MDLabel:
+                                        id: bc.temp_carc
+                                        text: 'XXX °C'
+                                        halign: 'right'
+
+                            
+#PARCIALMENTE VISTO 
 <Graficos>:
     size_hint: 0.8, 0.80
     auto_dismiss: True
@@ -898,6 +1005,7 @@
             voltage_visible: voltage_checkbox.active
             power_visible: power_checkbox.active
             thd_visible: thd_checkbox.active
+            temp_visible: temp_checkbox.active
 
         BoxLayout:
             id: legend
@@ -991,6 +1099,15 @@
                             app.root._j_graficos.update_plot_visibility()
                     Label:
                         text: 'Tensão THD'
+                    CheckBox:
+                        id: temp_checkbox
+                        group: 'graph_type'
+                        md_bg_color: [0.2, 0.2, 0.2, 1]
+                        on_active: 
+                            app.root._j_graficos.ids.graph.temp_visible = self.active
+                            app.root._j_graficos.update_plot_visibility()
+                    Label:
+                        text: 'Temperatura'
 
 <LabeledCheckBoxDataGraph>:
     orientation: 'horizontal'
