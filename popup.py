@@ -11,6 +11,7 @@ from timeseriesgraph import TimeSeriesGraph
 from kivy_garden.graph import LinePlot
 from kivy.animation import Animation
 from kivy.graphics import Color, Rectangle
+from threading import Thread, Lock
 
 class Modbus_Popup(Popup):
     """
@@ -75,32 +76,32 @@ class Atuacao(Popup):
     """
         Classe que irá abrir a janela do comando do motor
     """
-    def __init__(self, **kwargs):
+    def __init__(self, modbus, lock, **kwargs):
         super().__init__()
 
-        self._ip = kwargs.get('ipmain')
-        self._porta = kwargs.get('portamain')
+        self.addr_hz = 1313
         self.title = ""
         self.addr = None
         self.estado_motor = False
-    
+        self._lock = lock    
 
-    
-
-        self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
+        self._modbusCliente = modbus
+        # self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
     def selecionar_partida(self, addr, option):
         self.tipo_partida_valor = option  
 
         if (option == 3):
-            self._modbusCliente.write_single_register(addr, option)
+            with self._lock:
+                self._modbusCliente.write_single_register(addr, option)
             self.addr = 1319
             print("Partida direta")
             self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 0
             self.ids.coluna_velocidade.disable = False
         elif (option == 1):
-            self._modbusCliente.write_single_register(addr, option)
+            with self._lock:
+                self._modbusCliente.write_single_register(addr, option)
             self.addr = 1316
             self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 1
@@ -109,9 +110,9 @@ class Atuacao(Popup):
             self.ids.slider_velocidade.opacity = 0
             print("Partida soft-star")
         elif (option == 2):
-            self._modbusCliente.write_single_register(addr, option)
+            with self._lock:
+                self._modbusCliente.write_single_register(addr, option)
             self.addr = 1312
-            self.addr_hz = 1313
             self.cond_liga = True
             self.ids.coluna_velocidade.opacity = 1
             self.ids.coluna_velocidade.disable = True
@@ -126,31 +127,34 @@ class Atuacao(Popup):
         """
             Define a velocidade do motor em termos de frequência (Hz) a partir a mudança do Slider        
         """
-        self._modbusCliente.write_single_register(self.addr_hz,valor)
+        with self._lock:
+            self._modbusCliente.write_single_register(self.addr_hz,valor*10)#Modificar e colocar multiplicadores
         print(valor,self.addr_hz)        
         
 
     def controla_partida(self,aciona):
         if (aciona == 0 and self.cond_desl == True):
-            self._modbusCliente.write_single_register(self.addr,aciona)
+            with self._lock:
+                self._modbusCliente.write_single_register(self.addr,aciona)
             self.ids.coluna_velocidade.opacity = 0
             self.ids.coluna_velocidade.disable = False
             self.ids.slider_velocidade.opacity = 0
             self.ids.slider_velocidade.disable = False
             self.addr = None
-            self.addr_hz = None
             self.estado_motor = False
             self.cond_liga = True
             self.cond_desl = False            
             print("Motor desligado")
         elif(aciona == 1 and self.cond_liga == True):
-            self._modbusCliente.write_single_register(self.addr,aciona)
+            with self._lock:
+                self._modbusCliente.write_single_register(self.addr,aciona)
             self.estado_motor = True
             self.cond_liga = False
             self.cond_desl = True
             print("Motor ligado")
         elif(aciona == 2):
-            self._modbusCliente.write_single_register(self.addr,aciona)
+            with self._lock:
+                self._modbusCliente.write_single_register(self.addr,aciona)
             print("Motor resetado")
     
     def est_motor(self):

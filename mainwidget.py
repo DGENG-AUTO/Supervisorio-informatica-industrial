@@ -5,7 +5,7 @@ from kivy.core.window import Window
 from kivy.lang.builder import Builder
 from popup import Modbus_Popup, Scan_Popup, Atuacao, Medicao, Graficos, HistGraphPopup
 from pyModbusTCP.client import ModbusClient
-from threading import Thread
+from threading import Thread, Lock
 from time import sleep
 from kivy.clock import Clock
 from biblioteca_tags import Biblioteca_tags
@@ -15,6 +15,7 @@ from timeseriesgraph import TimeSeriesGraph
 from modulopersistencia import ModbusPersistencia
 from kivy_garden.graph import LinePlot
 from pymodbus.client.mixin import ModbusClientMixin
+
 
 
 
@@ -35,6 +36,7 @@ class MainWidget(Screen):
 
         #kwargs será usado para permitir inúmeras passagens de variável de argumentos nomeados,
         #devem ser usados os mesmos nomes para não haver erros ou conflitos
+        self._lock = Lock()
         self._scan_time = kwargs.get('scan_timemain')
         self._ip = kwargs.get('ipmain')
         self._porta = kwargs.get('portamain')
@@ -45,6 +47,8 @@ class MainWidget(Screen):
         self.dic_exemplo = {}
         self._j_medidas = Medicao()
         self._selected_tags = []
+        #criando a conexão MODBUS-TCP
+        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
 
         #BIBLIOTECA DAS TAGS - FILTRARÁ AS TAGS NECESSÁRIAS QUE SERÃO USADAS
         self._tags_importada = Biblioteca_tags().get_tags()
@@ -68,14 +72,12 @@ class MainWidget(Screen):
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
         self._j_scanPopup = Scan_Popup(scan_time=self._scan_time)
-        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
+        self._j_atuacao = Atuacao(self._modbusCliente, self._lock)
         self._j_medidas = Medicao()
         self._j_graficos = Graficos(self._max_points, self.dic_cores)
         self._j_histgraph = HistGraphPopup(tags=self.dic_exemplo)
         self._histdados = ModbusPersistencia(scantime=self._scan_time)
 
-        #criando a conexão MODBUS-TCP
-        self._modbusCliente = ModbusClient(host=self._ip,port=self._porta, timeout=1)
     
     
     #VISTO       
@@ -109,7 +111,7 @@ class MainWidget(Screen):
         self._porta = porta_digitado
         self._modbusCliente.host = self._ip
         self._modbusCliente.port = self._porta
-        self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
+        # self._j_atuacao = Atuacao(ipmain=self._ip, portamain=self._porta)
 
         try:
             Window.set_system_cursor('wait')
@@ -143,7 +145,9 @@ class MainWidget(Screen):
             while self._atualiza:
                 try:
                     #CAPTAÇÃO DE ERRO
-                    resultado = self._modbusCliente.read_holding_registers(0, 1)
+                    with self._lock:
+                        resultado = self._modbusCliente.read_holding_registers(0, 1)
+                        
                     if resultado is None:
                         raise Exception("Sem resposta do servidor")
                     
@@ -185,10 +189,12 @@ class MainWidget(Screen):
             endereço = self.dic_cores[tag]['address']
             tipo_modbus = self.dic_cores[tag]['tipo_modbus']
             
-            if tipo_modbus == '4x':
-                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço, 1)[0]
+            if tipo_modbus == '4x':                         
+                with self._lock:
+                    self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço, 1)[0]
             elif tipo_modbus == 'FP':
-                self._meas['values'][tag] = self.leitura_fp(endereço)
+                with self._lock:
+                    self._meas['values'][tag] = self.leitura_fp(endereço)
             
             
             """elif tipo_modbus == '4x_bit':
