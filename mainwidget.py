@@ -14,7 +14,8 @@ from random import random
 from timeseriesgraph import TimeSeriesGraph
 from modulopersistencia import ModbusPersistencia
 from kivy_garden.graph import LinePlot
-from pymodbus.client.mixin import ModbusClientMixin
+from pymodbus.payload import BinaryPayloadBuilder,BinaryPayloadDecoder
+from pymodbus.constants import Endian
 
 
 
@@ -44,7 +45,7 @@ class MainWidget(Screen):
         self._meas['timestamp'] = None
         self._meas['values'] = {}
         self.dic_cores = {}
-        self.dic_exemplo = {}
+        self.dic_tags_hist = {}
         self._j_medidas = Medicao()
         self._selected_tags = []
         #criando a conexão MODBUS-TCP
@@ -56,18 +57,30 @@ class MainWidget(Screen):
             nome = tag['nome']
             addr = tag['address']
             tipo = tag['tipo_modbus']
+            div = tag['Div']
+            bit = tag['bit']
             if nome in self._j_medidas.ids:
                 if (nome == 'bc.corrente_r'):
                     plot_color = (1, 0, 0, 1)
                 else:
                     plot_color = (random(), random(), random(), 1)
-                self.dic_cores[nome] = {'address': addr, 'color': plot_color,'tipo_modbus': tipo}
-                tags_validas = [
+                self.dic_cores[nome] = {    
+                                            'address':      addr,
+                                            'color':        plot_color,
+                                            'tipo_modbus':  tipo,
+                                            'Div':          div,
+                                            'bit':          bit
+                                        }
+                tags_historico = [
                     'bc.corrente_media', 'bc.ativa_total', 'bc.reativa_total',
                     'bc.aparente_total', 'bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'
                 ]
-                if nome.startswith("bc.temp_") or nome in tags_validas:
-                    self.dic_exemplo[nome] = {'address': addr, 'color': plot_color, 'tipo_modbus': tipo}              
+                if nome.startswith("bc.temp_") or nome in tags_historico:
+                    self.dic_tags_hist[nome] = {
+                                                    'address':      addr, 
+                                                    'color':        plot_color, 
+                                                    'tipo_modbus':  tipo
+                                                }              
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
@@ -75,7 +88,7 @@ class MainWidget(Screen):
         self._j_atuacao = Atuacao(self._modbusCliente, self._lock)
         self._j_medidas = Medicao()
         self._j_graficos = Graficos(self._max_points, self.dic_cores)
-        self._j_histgraph = HistGraphPopup(tags=self.dic_exemplo)
+        self._j_histgraph = HistGraphPopup(tags=self.dic_tags_hist)
         self._histdados = ModbusPersistencia(scantime=self._scan_time)
 
     
@@ -188,46 +201,37 @@ class MainWidget(Screen):
         for tag in self.dic_cores:
             endereço = self.dic_cores[tag]['address']
             tipo_modbus = self.dic_cores[tag]['tipo_modbus']
+            divisor = self.dic_cores[tag]['Div']        
             
             if tipo_modbus == '4x':                         
                 with self._lock:
-                    self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço, 1)[0]
+                    self._meas['values'][tag] = (self._modbusCliente.read_holding_registers(endereço, 1)[0]/divisor)
             elif tipo_modbus == 'FP':
                 with self._lock:
-                    self._meas['values'][tag] = self.leitura_fp(endereço)
-            
-            
-            """elif tipo_modbus == '4x_bit':
-                bit_pos = tag_info.get('bit_pos', 0)  # Pega a posição do bit, default 0
-                self._meas['values'][tag] = self.leitura_binario(endereço, bit_pos)
+                    self._meas['values'][tag] = (self.leitura_fp(endereço)/divisor)
+            elif tipo_modbus == '4x_bit':
+                with self._lock:
+                    self._meas['values'][tag] = (self.leitura_binario(endereço, self.dic_cores[tag]['bit'])/divisor)
 
 
-
-
-                self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]"""
-            
-            
-            """for dict in self._tags_importada:
-                if dict['nome'] == tag:
-                    if dict['tipo_modbus'] == '4x':
-                        self._meas['values'][tag] = self._modbusCliente.read_holding_registers(endereço,1)[0]
-                    if dict['tipo_modbus'] == 'fp':
-                        self._meas['values'][tag] = self.leitura_fp(endereço)
-                    if dict['tipo_modbus'] == '4x_bit':
-                        self._meas['values'][tag] = self.leitura_binario(endereço, dict['bit_pos'])"""
     
     def leitura_fp(self, addr):
+        #Estudar!!
         puxada = self._modbusCliente.read_holding_registers(addr,2)
-        tipo = ModbusClientMixin.DATATYPE.FLOAT32
-        dados = ModbusClientMixin.convert_from_registers(puxada, data_type=tipo,word_order='little')
+        decode = BinaryPayloadDecoder.fromRegisters(puxada, byteorder=Endian.Big, wordorder=Endian.Big)
+        #decode = BinaryPayloadDecoder.fromRegisters(puxada,byteorder=Endian.Big,wordorder =Endian.Little) #Concatena os 16bits dos endereços addr e addr+1 para puxar 32bits
+        dados = decode.decode_32bit_float()#converte para float
         return dados
 
     def leitura_binario(self, addr, bit_pos):
-        puxada = self._modbusCliente.read_holding_registers(addr, 1)
-        if puxada:
-            bits = ModbusClientMixin.convert_from_registers(puxada, data_type=ModbusClientMixin.DATATYPE.BITS, wordorder='little')
-            return 1 if bits[bit_pos] else 0
-        return None
+        #EStudar!!
+        puxada = self._modbusCliente.read_holding_registers(addr)
+        decode = BinaryPayloadDecoder.fromRegisters(puxada,byteorder=Endian.Big,wordorder =Endian.Little) #Concatena os 16bits dos endereços addr e addr+1 para puxar 32bits
+        dados1 = decode.decode_bits()
+        dados2 = decode.decode_bits()
+
+        dados = dados2+dados1
+        return dados[bit_pos]    
     
     def updateGUI(self):
         """
