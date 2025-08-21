@@ -84,9 +84,128 @@
                 keep_ratio: False
                 size_hint: (0.7,0.7)
                 pos_hint: {"x": 0.2028, "y": -0.0485}
+            
+            Image:
+                id: valvula_inf 
+                source: "img/valvula off.png"  
+                keep_ratio: False
+                size_hint: (0.06,0.06)
+                pos_hint: {"x": 0.35, "y": 0.305}
+
+            Image:
+                id: valvula_sup
+                source: "img/valvula off.png"  
+                keep_ratio: False
+                size_hint: (0.06,0.06)
+                pos_hint: {"x": 0.60, "y": 0.855}
 
             # CARDS DE DADOS
-                #ESPAÇO RESERVADO PARA OS CARDS
+            FloatLayout:
+                #CARD NIVEL
+                Label:
+                    id: lit01_label
+                    text: "bc.lit01: %"
+                    markup: True
+                    halign: "center"
+                    valign: "middle"
+                    color: (0, 0, 1, 1)  
+                    font_size: "20sp"
+                    pos_hint: {'x': 0.66, 'y': 0.70}
+                    size_hint: (0.3, 0.1)
+                #CARDS TEMPERATURA DO MOTOR
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'x': 0.65, 'y': 0.30}
+                    size_hint: (0.3, 0.1)
+                    spacing: dp(25)
+                    Label:
+                        id: temp_r
+                        text: "temp_r"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    Label:
+                        id: temp_s
+                        text: "temp_s"
+                        halign: "left"
+                        markup: True                      
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    Label:
+                        id: temp_t
+                        text: "temp_t"
+                        halign: "left"
+                        markup: True                     
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    Label:
+                        id: temp_carc
+                        text: "temp_carc"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'x': 0.56, 'y': 0.20}
+                    size_hint: (0.3, 0.1)
+                    spacing: dp(25)
+                    Label:
+                        id: tipo_motor
+                        text: "tipo motor"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'x': 0.38, 'y': 0.35}
+                    size_hint: (0.3, 0.1)
+                    spacing: dp(-10)
+                    Label:
+                        id: fit_01
+                        text: "fit"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                    Label:
+                        id: pit_01
+                        text: "pit"
+                        halign: "left"
+                        markup: True                      
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'x': 0.78, 'y': 0.75}
+                    size_hint: (0.3, 0.1)
+                    spacing: dp(-10)
+                    Label:
+                        id: reserva_sup
+                        text: ""
+                        halign: "left"
+                        markup: True                       
+                        color: (1, 0, 0, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
             #FIM CARDS DE DADOS
 
             # BOTÕES DE COMANDO PARTE INFERIOR

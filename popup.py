@@ -160,6 +160,15 @@ class Atuacao(Popup):
     def est_motor(self):
         return self.estado_motor
 
+    def rampa_acel(self, acel):
+        with self._lock:
+            self._modbusCliente.write_single_register(1317,acel)
+    
+    def rampa_decel(self,decel):
+        with self._lock:
+            self._modbusCliente.write_single_register(1318,decel)
+
+
       
 
 class Medicao(Popup):

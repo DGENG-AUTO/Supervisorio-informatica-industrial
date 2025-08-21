@@ -17,9 +17,6 @@ from kivy_garden.graph import LinePlot
 from pymodbus.payload import BinaryPayloadBuilder,BinaryPayloadDecoder
 from pymodbus.constants import Endian
 
-
-
-
 class MainWidget(Screen):
     """
         Classe que contrói a interface gráfica do supervisório com imagens,
@@ -59,28 +56,28 @@ class MainWidget(Screen):
             tipo = tag['tipo_modbus']
             div = tag['Div']
             bit = tag['bit']
-            if nome in self._j_medidas.ids:
-                if (nome == 'bc.corrente_r'):
-                    plot_color = (1, 0, 0, 1)
-                else:
-                    plot_color = (random(), random(), random(), 1)
-                self.dic_cores[nome] = {    
-                                            'address':      addr,
-                                            'color':        plot_color,
-                                            'tipo_modbus':  tipo,
-                                            'Div':          div,
-                                            'bit':          bit
-                                        }
-                tags_historico = [
-                    'bc.corrente_media', 'bc.ativa_total', 'bc.reativa_total',
-                    'bc.aparente_total', 'bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'
-                ]
-                if nome.startswith("bc.temp_") or nome in tags_historico:
-                    self.dic_tags_hist[nome] = {
-                                                    'address':      addr, 
-                                                    'color':        plot_color, 
-                                                    'tipo_modbus':  tipo
-                                                }              
+            
+            if (nome == 'bc.corrente_r'):
+                plot_color = (1, 0, 0, 1)
+            else:
+                plot_color = (random(), random(), random(), 1)
+            self.dic_cores[nome] = {    
+                                        'address':      addr,
+                                        'color':        plot_color,
+                                        'tipo_modbus':  tipo,
+                                        'Div':          div,
+                                        'bit':          bit
+                                    }
+            tags_historico = [
+                'bc.corrente_media', 'bc.ativa_total', 'bc.reativa_total',
+                'bc.aparente_total', 'bc.tensao_rs', 'bc.tensao_st', 'bc.tensao_tr'
+            ]
+            if nome.startswith("bc.temp_") or nome in tags_historico:
+                self.dic_tags_hist[nome] = {
+                                                'address':      addr, 
+                                                'color':        plot_color, 
+                                                'tipo_modbus':  tipo
+                                            }              
 
         #Chamada das janelas segundárias (popup) já definido os valores nas linhas 23,24 e 25
         self._j_modbusPopup = Modbus_Popup(ip=self._ip, porta=self._porta)
@@ -218,8 +215,8 @@ class MainWidget(Screen):
     def leitura_fp(self, addr):
         #Estudar!!
         puxada = self._modbusCliente.read_holding_registers(addr,2)
-        decode = BinaryPayloadDecoder.fromRegisters(puxada, byteorder=Endian.Big, wordorder=Endian.Big)
-        #decode = BinaryPayloadDecoder.fromRegisters(puxada,byteorder=Endian.Big,wordorder =Endian.Little) #Concatena os 16bits dos endereços addr e addr+1 para puxar 32bits
+        #decode = BinaryPayloadDecoder.fromRegisters(puxada, byteorder=Endian.Big, wordorder=Endian.Big)
+        decode = BinaryPayloadDecoder.fromRegisters(puxada,byteorder=Endian.Big,wordorder =Endian.Little) #Concatena os 16bits dos endereços addr e addr+1 para puxar 32bits
         dados = decode.decode_32bit_float()#converte para float
         return dados
 
@@ -240,6 +237,36 @@ class MainWidget(Screen):
 
         # ATUALIZAÇÃO DAS LABEL
         for tag in self.dic_cores:
+
+            if tag == 'bc.lit01':
+                valor = f'{self._meas['values'][tag]:.2f}'
+                self.ids.nivel_agua_superior.value = self._meas['values'][tag]
+                self.ids.lit01_label.text = "bc.lit01: "+ str(valor) + '%'
+                print(f'litros %: {self._meas['values'][tag]}')
+            
+            if tag == "bc.tipo_motor":
+                if self._meas['values'][tag] == 1:
+                    self.ids.tipo_motor.text = 'Motor 1'
+                elif  self._meas['values'][tag] == 2:
+                    self.ids.tipo_motor.text = 'Motor 2'
+            
+            if tag == "bc.pit01":
+                valor = f'{self._meas['values'][tag]:.2f}' 
+                self.ids.pit_01.text = str(valor)
+            
+            if tag == "bc.fit01":
+                valor = f'{self._meas['values'][tag]:.2f}'
+                self.ids.fit_01.text = str(valor)
+            
+            if tag == "bc.na_tq_superior":
+                if self._meas['values'][tag] == 1:
+                    self.ids.reserva_sup.text = 'RESERVATÓRIO CHEIO'
+                else:
+                    self.ids.reserva_sup.text = ''
+
+
+
+
             if tag in self._j_medidas.ids:
                 if "corrente" in tag:
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' A'
@@ -255,8 +282,19 @@ class MainWidget(Screen):
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag])
                 elif "bc.temp":
                     self._j_medidas.ids[tag].text = str(self._meas['values'][tag]) + ' °C'
+                    if tag == "bc.temp_r":
+                        self.ids.temp_r.text = 'temp. em R:   ' + str(self._meas['values'][tag]) + ' °C'
+                    elif tag == "bc.temp_s":
+                        self.ids.temp_s.text = 'temp. em S:   ' + str(self._meas['values'][tag]) + ' °C'
+                    elif tag == "bc.temp_t":
+                        self.ids.temp_t.text = 'temp. em T:   ' + str(self._meas['values'][tag]) + ' °C'
+                    elif tag == "bc.temp_carc":
+                        self.ids.temp_carc.text = 'Carcaça          ' + str(self._meas['values'][tag]) + ' °C'
             else:
                 continue
+        
+       
+            
         
         # ATUALIZAÇÃO DO GRÁFICO
         tag_types = {
@@ -340,7 +378,7 @@ class MainWidgetApp(MDApp):
         self.theme_cls.theme_style = 'Light'
         self.theme_cls.primary_palette = 'Gray'
         self.theme_cls.primary_hue = "500"
-        self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
+        self.widget = MainWidget(scan_timemain = 1000, ipmain='10.15.30.181', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
     

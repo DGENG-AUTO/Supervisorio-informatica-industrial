@@ -238,25 +238,33 @@
                         width: "20dp"
                         height: "180dp"
                         pos_hint: {"center_y": 0.5}
-                        on_touch_up: root.rampa_velocidade(int(self.value))
+                        on_value: root.rampa_velocidade(int(self.value))
                     BoxLayout:
                         orientation: "vertical"
                         spacing: "8dp"
                         size_hint_x: 1
-                        MDTextField:
+                        MDTextFieldRect:
                             id: entrada_acel
-                            text:""
-                            hint_text: "Aceleração (s)"
+                            hint_text: "Digite aceleração (10s a 60s)"
                             mode: "rectangle"
-                            size_hint_y: None
-                            height: "36dp"
-                        MDTextField:
+                            size_hint_x: 1
+                            radius: [15, 15, 15, 15]
+                            text_color: 0, 0, 1, 0
+                            text_color: 0, 0, 1, 1
+                            line_color_normal: 0.6, 0.6, 0.6, 1
+                            fill_color: 1, 1, 1, 1
+                            on_text: root.rampa_acel(int(entrada_acel.text))
+                        MDTextFieldRect:
                             id: entrada_decel
-                            text:""
-                            hint_text: "Desaceleração (s)"
+                            hint_text: "Digite desaceleração (10s a 60s)"
                             mode: "rectangle"
-                            size_hint_y: None
-                            height: "36dp"
+                            size_hint_x: 1
+                            radius: [15, 15, 15, 15]
+                            text_color: 0, 0, 1, 0
+                            text_color: 0, 0, 1, 1
+                            line_color_normal: 0.6, 0.6, 0.6, 1
+                            fill_color: 1, 1, 1, 1
+                            on_text_validate: root.rampa_decel(int(entrada_decel.text))
 
                 Label:
                     text: f"Velocidade: {int(slider_velocidade.value)} Hz"
