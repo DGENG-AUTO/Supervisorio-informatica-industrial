@@ -241,7 +241,10 @@ class MainWidget(Screen):
             if tag == 'bc.lit01':
                 valor = f'{self._meas['values'][tag]:.2f}'
                 self.ids.nivel_agua_superior.value = self._meas['values'][tag]
+                self.ids.nivel_agua_inferior.value = int(100 - self._meas['values'][tag])
+                retro = f'{float(100 - self._meas['values'][tag]):.2f}'
                 self.ids.lit01_label.text = "Nível: "+ str(valor) + '%'
+                self.ids.lit02_label.text = "Nível: "+ str(retro) + '%'
                 print(f'litros %: {self._meas['values'][tag]}')
             
             if tag == "bc.tipo_motor":

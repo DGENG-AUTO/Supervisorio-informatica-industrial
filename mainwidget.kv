@@ -116,7 +116,7 @@
 
             # CARDS DE DADOS
             FloatLayout:
-            #CARD NIVEL
+            #CARD NIVEL SUPERIOR
                 BoxLayout:
                     orientation:'vertical'
                     pos_hint: {'x': 0.775, 'y': 0.68}
@@ -124,6 +124,21 @@
                     spacing: dp(25)
                     Label:
                         id: lit01_label
+                        text: "Nível: %"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+            #CARD NIVEL INFERIOR
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'x': 0.285, 'y': 0.45}
+                    size_hint: (0.3, 0.1)
+                    spacing: dp(25)
+                    Label:
+                        id: lit02_label
                         text: "Nível: %"
                         halign: "left"
                         markup: True                       

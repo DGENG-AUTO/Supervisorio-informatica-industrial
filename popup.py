@@ -235,13 +235,14 @@ class Graficos(Popup):
         if self.ids.graph.current_visible:
             active_type = 'current'
             self.ids.graph.ylabel = 'Amper [A]'
-            self.ids.graph.ymax = 200
-            self.ids.graph.y_ticks_major = 40
+            self.ids.graph.ymax = 1
+            self.ids.graph.y_ticks_major = 0.2
+
         elif self.ids.graph.voltage_visible:
             active_type = 'voltage'
             self.ids.graph.ylabel = 'Volts [V]'
-            self.ids.graph.ymax = 500
-            self.ids.graph.y_ticks_major = 100
+            self.ids.graph.ymax = 270
+            self.ids.graph.y_ticks_major = 60
         elif self.ids.graph.power_visible:
             active_type = 'power'
             self.ids.graph.ylabel = 'Power [W]'
