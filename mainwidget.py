@@ -108,7 +108,10 @@ class MainWidget(Screen):
             Método que configura o tempo de varredura
         """
         self._scan_time = time
-        print("Scantime configurado: ",self._scan_time)   
+        print("Scantime configurado: ",self._scan_time)
+
+    def acionamento_imagem(self):
+        self._j_atuacao.acionamento_imagem()   
 
 
     def start_atendimento(self, ip_digitado, porta_digitado):
@@ -162,10 +165,7 @@ class MainWidget(Screen):
                         raise Exception("Sem resposta do servidor")
                     
                     #MUDANÇA DO MOTOR:
-                    if(self._j_atuacao.est_motor()):
-                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_on (1).png"))
-                    else:
-                        Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "source", "img/Motor_off (1).png"))
+                    
 
                     #CAPTAÇÃO DE DADOS    
                     self.read_datas()
@@ -178,7 +178,7 @@ class MainWidget(Screen):
                 except Exception as erro:
                     print("Erro: ",erro.args)
                     self._modbusCliente.close()
-                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "source", "img/con_off.png"))
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_con, "background_normal", "img/con_off.png"))
                     Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "color", (1, 0, 0, 1)))
                     Clock.schedule_once(lambda dt: setattr(self.ids.label_con, "text", "[b]DESCONECTADO[/b]"))
                     Clock.schedule_once(lambda dt: self._j_modbusPopup.set_aviso("Desconectado do servidor!"))
@@ -234,14 +234,14 @@ class MainWidget(Screen):
         """
             Método para atualização da interface gráfica a partir dos dados lidos
         """
-
+        
         # ATUALIZAÇÃO DAS LABEL
         for tag in self.dic_cores:
 
             if tag == 'bc.lit01':
                 valor = f'{self._meas['values'][tag]:.2f}'
                 self.ids.nivel_agua_superior.value = self._meas['values'][tag]
-                self.ids.lit01_label.text = "bc.lit01: "+ str(valor) + '%'
+                self.ids.lit01_label.text = "Nível: "+ str(valor) + '%'
                 print(f'litros %: {self._meas['values'][tag]}')
             
             if tag == "bc.tipo_motor":
@@ -252,20 +252,33 @@ class MainWidget(Screen):
             
             if tag == "bc.pit01":
                 valor = f'{self._meas['values'][tag]:.2f}' 
-                self.ids.pit_01.text = str(valor)
+                self.ids.pit_01.text = str(valor) + ' kgf/cm²'
             
             if tag == "bc.fit01":
                 valor = f'{self._meas['values'][tag]:.2f}'
-                self.ids.fit_01.text = str(valor)
+                self.ids.fit_01.text = str(valor) + ' m³/h'
             
             if tag == "bc.na_tq_superior":
                 if self._meas['values'][tag] == 1:
                     self.ids.reserva_sup.text = 'RESERVATÓRIO CHEIO'
                 else:
                     self.ids.reserva_sup.text = ''
+            
+            if tag == 'bc.habilita':
+                if (self._meas['values'][tag] == 1):
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "background_normal", "img/Motor_on (1).png"))
+                    self.ids.how_motor.text = 'ON'
+                    self._j_atuacao.est_motor(es = True)
+                elif (self._meas['values'][tag] == 0):
+                    Clock.schedule_once(lambda dt: setattr(self.ids.img_motor, "background_normal", "img/Motor_off (1).png"))
+                    self._j_atuacao.est_motor(es = False)
+                    self.ids.how_motor.text = 'OFF'
+            
+            if tag == 'bc.encoder':
+                self.ids.rpm.text = str(self._meas['values'][tag]) + ' rpm'
 
-
-
+            if tag == 'bc.torque':
+                self.ids.torque.text = str(self._meas['values'][tag]) + ' rpm'               
 
             if tag in self._j_medidas.ids:
                 if "corrente" in tag:
@@ -378,7 +391,7 @@ class MainWidgetApp(MDApp):
         self.theme_cls.theme_style = 'Light'
         self.theme_cls.primary_palette = 'Gray'
         self.theme_cls.primary_hue = "500"
-        self.widget = MainWidget(scan_timemain = 1000, ipmain='10.15.30.181', portamain=502) #Mesmos nome dos get
+        self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
     

@@ -78,12 +78,13 @@
                     color: (0, 0, 1, 1)
                     size_hint: (1, 1)
 
-            Image:
+            Button:
                 id: img_motor 
-                source: "img/Motor_off (1).png"  
+                background_normal:"img/Motor_off (1).png" 
                 keep_ratio: False
-                size_hint: (0.7,0.7)
-                pos_hint: {"x": 0.2028, "y": -0.0485}
+                size_hint: (0.08,0.15)
+                pos_hint: {"x": 0.546, "y": 0.259}
+                on_release: root.acionamento_imagem()
             
             Image:
                 id: valvula_inf 
@@ -98,79 +99,145 @@
                 keep_ratio: False
                 size_hint: (0.06,0.06)
                 pos_hint: {"x": 0.60, "y": 0.855}
+            
+            Image:
+                id: fit
+                source: "img/FIT.png"  
+                keep_ratio: False
+                size_hint: (0.07,0.07)
+                pos_hint: {"x": 0.586, "y": 0.65}
+            
+            Image:
+                id: pit
+                source: "img/PIT.png"  
+                keep_ratio: False
+                size_hint: (0.06,0.06)
+                pos_hint: {"x": 0.524, "y": 0.54}
 
             # CARDS DE DADOS
             FloatLayout:
-                #CARD NIVEL
-                Label:
-                    id: lit01_label
-                    text: "bc.lit01: %"
-                    markup: True
-                    halign: "center"
-                    valign: "middle"
-                    color: (0, 0, 1, 1)  
-                    font_size: "20sp"
-                    pos_hint: {'x': 0.66, 'y': 0.70}
-                    size_hint: (0.3, 0.1)
-                #CARDS TEMPERATURA DO MOTOR
+            #CARD NIVEL
                 BoxLayout:
                     orientation:'vertical'
-                    pos_hint: {'x': 0.65, 'y': 0.30}
+                    pos_hint: {'x': 0.775, 'y': 0.68}
                     size_hint: (0.3, 0.1)
                     spacing: dp(25)
+                    Label:
+                        id: lit01_label
+                        text: "Nível: %"
+                        halign: "left"
+                        markup: True                       
+                        color: (0, 0, 1, 1)  
+                        font_size: "20sp"
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+            # CARD TEMPERATURA DO MOTOR
+                BoxLayout:
+                    orientation: 'vertical'
+                    pos_hint: {'x': 0.70, 'y': 0.18}
+                    size_hint: (0.15, 0.2)
+                    padding: dp(10)
+                    spacing: dp(10)
+
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 1, 0.3  
+                        Line:
+                            width: 1.5
+                            rectangle: (self.x, self.y, self.width, self.height)
+
+                    Label:
+                        text: "Temperatura do Motor:"
+                        halign: "left"
+                        color: (0, 0, 1, 1)
+                        font_size: "18sp"
+                        bold: True
+                        text_size: self.width, None
+
                     Label:
                         id: temp_r
-                        text: "temp_r"
+                        text: "R: 242.0 °C"
                         halign: "left"
-                        markup: True                       
-                        color: (0, 0, 1, 1)  
-                        font_size: "20sp"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
+
                     Label:
                         id: temp_s
-                        text: "temp_s"
+                        text: "S: 242.0 °C"
                         halign: "left"
-                        markup: True                      
-                        color: (0, 0, 1, 1)  
-                        font_size: "20sp"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
+
                     Label:
                         id: temp_t
-                        text: "temp_t"
+                        text: "T: 240.0 °C"
                         halign: "left"
-                        markup: True                     
-                        color: (0, 0, 1, 1)  
-                        font_size: "20sp"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
+
                     Label:
                         id: temp_carc
-                        text: "temp_carc"
+                        text: "Carcaça: 243.0 °C"
                         halign: "left"
-                        markup: True                       
-                        color: (0, 0, 1, 1)  
-                        font_size: "20sp"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
+                        
+            #CARD TIPO DE MOTOR
                 BoxLayout:
                     orientation:'vertical'
-                    pos_hint: {'x': 0.56, 'y': 0.20}
-                    size_hint: (0.3, 0.1)
-                    spacing: dp(25)
+                    pos_hint: {'x': 0.626, 'y': 0.18}
+                    size_hint: (0.07, 0.2)
+                    padding: dp(5)
+                    spacing: dp(5)
+
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 1, 0.3  
+                        Line:
+                            width: 1.5
+                            rectangle: (self.x, self.y, self.width, self.height)
+
+                    Label:
+                        id: how_motor
+                        text: "ESTADO"
+                        halign: "left"
+                        color: (0, 0, 1, 1)
+                        font_size: "18sp"
+                        bold: True
+                        text_size: self.width, None
                     Label:
                         id: tipo_motor
                         text: "tipo motor"
                         halign: "left"
-                        markup: True                       
-                        color: (0, 0, 1, 1)  
-                        font_size: "20sp"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
+
+                    Label:
+                        id: rpm
+                        text: "RPM"
+                        halign: "left"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
+                        text_size: self.width, None
+
+                    Label:
+                        id: torque
+                        text: "Torque"
+                        halign: "left"
+                        color: (0, 0, 1, 1)
+                        font_size: "16sp"
+                        text_size: self.width, None
+                
+                    
+            #CARD VAZÃO
                 BoxLayout:
                     orientation:'vertical'
-                    pos_hint: {'x': 0.38, 'y': 0.35}
+                    pos_hint: {'x': 0.60, 'y': 0.677}
                     size_hint: (0.3, 0.1)
                     spacing: dp(-10)
                     Label:
@@ -182,6 +249,12 @@
                         font_size: "20sp"
                         text_size: self.width, None
                         height: self.texture_size[1]
+            #CARD PRESSÃO
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {"x": 0.50, "y": 0.57}
+                    size_hint: (0.2, 0.1)
+                    spacing: dp(-10)
                     Label:
                         id: pit_01
                         text: "pit"
@@ -190,8 +263,8 @@
                         color: (0, 0, 1, 1)  
                         font_size: "20sp"
                         text_size: self.width, None
-                        height: self.texture_size[1]
-
+                        height: self.texture_size[1]                 
+            #AVISO
                 BoxLayout:
                     orientation:'vertical'
                     pos_hint: {'x': 0.78, 'y': 0.75}

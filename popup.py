@@ -12,6 +12,7 @@ from kivy_garden.graph import LinePlot
 from kivy.animation import Animation
 from kivy.graphics import Color, Rectangle
 from threading import Thread, Lock
+from pyModbusTCP.client import ModbusClient
 
 class Modbus_Popup(Popup):
     """
@@ -84,44 +85,40 @@ class Atuacao(Popup):
         self.addr = None
         self.estado_motor = False
         self._lock = lock    
-
+        self.im = None
         self._modbusCliente = modbus
         # self._modbusCliente = ModbusClient(host=self._ip, port=self._porta)
 
     def selecionar_partida(self, addr, option):
-        self.tipo_partida_valor = option  
-
-        if (option == 3):
-            with self._lock:
-                self._modbusCliente.write_single_register(addr, option)
-            self.addr = 1319
-            print("Partida direta")
-            self.cond_liga = True
-            self.ids.coluna_velocidade.opacity = 0
-            self.ids.coluna_velocidade.disable = False
-        elif (option == 1):
-            with self._lock:
-                self._modbusCliente.write_single_register(addr, option)
-            self.addr = 1316
-            self.cond_liga = True
-            self.ids.coluna_velocidade.opacity = 1
-            self.ids.coluna_velocidade.disable = True
-            self.ids.slider_velocidade.disable = False
-            self.ids.slider_velocidade.opacity = 0
-            print("Partida soft-star")
-        elif (option == 2):
-            with self._lock:
-                self._modbusCliente.write_single_register(addr, option)
-            self.addr = 1312
-            self.cond_liga = True
-            self.ids.coluna_velocidade.opacity = 1
-            self.ids.coluna_velocidade.disable = True
-            self.ids.slider_velocidade.opacity = 1
-            self.ids.slider_velocidade.disable = True
-            print("Partida inversor")
-        else:
-            self.cond_liga = False
-            print("Falha ao selecionar tipo de partida")
+        #self.tipo_partida_valor = option  
+        if(self.estado_motor == False):
+            if (option == 3):
+                with self._lock:
+                    self._modbusCliente.write_single_register(addr, option)
+                self.addr = 1319
+                print("Partida direta")
+                self.ids.coluna_velocidade.opacity = 0
+                self.ids.coluna_velocidade.disable = False
+            elif (option == 1):
+                with self._lock:
+                    self._modbusCliente.write_single_register(addr, option)
+                self.addr = 1316
+                self.ids.coluna_velocidade.opacity = 1
+                self.ids.coluna_velocidade.disable = True
+                self.ids.slider_velocidade.disable = False
+                self.ids.slider_velocidade.opacity = 0
+                print("Partida soft-star")
+            elif (option == 2):
+                with self._lock:
+                    self._modbusCliente.write_single_register(addr, option)
+                self.addr = 1312
+                self.ids.coluna_velocidade.opacity = 1
+                self.ids.coluna_velocidade.disable = True
+                self.ids.slider_velocidade.opacity = 1
+                self.ids.slider_velocidade.disable = True
+                print("Partida inversor")
+            else:
+                print("Falha ao selecionar tipo de partida")
 
     def rampa_velocidade(self,valor):
         """
@@ -133,34 +130,60 @@ class Atuacao(Popup):
         
 
     def controla_partida(self,aciona):
-        if (aciona == 0 and self.cond_desl == True):
-            with self._lock:
-                self._modbusCliente.write_single_register(self.addr,aciona)
-            self.ids.coluna_velocidade.opacity = 0
-            self.ids.coluna_velocidade.disable = False
-            self.ids.slider_velocidade.opacity = 0
-            self.ids.slider_velocidade.disable = False
-            self.addr = None
-            self.estado_motor = False
-            self.cond_liga = True
-            self.cond_desl = False            
-            print("Motor desligado")
-        elif(aciona == 1 and self.cond_liga == True):
-            with self._lock:
-                self._modbusCliente.write_single_register(self.addr,aciona)
-            self.estado_motor = True
-            self.cond_liga = False
-            self.cond_desl = True
-            print("Motor ligado")
-        elif(aciona == 2):
-            with self._lock:
-                self._modbusCliente.write_single_register(self.addr,aciona)
-            print("Motor resetado")
+        
+        if(self.estado_motor == True):        
+            if (aciona == 0):
+                self.ler_motor()
+                with self._lock:
+                    self._modbusCliente.write_single_register(self.addr,aciona)           
+                print("Motor desligado")            
+            elif(aciona == 2):
+                with self._lock:
+                    self._modbusCliente.write_single_register(self.addr,aciona)
+                print("Motor resetado")
+
+        elif (self.estado_motor == False):
+            if(aciona == 1):
+                self.im = 1
+                with self._lock:
+                    self._modbusCliente.write_single_register(self.addr,aciona)
+                print("Motor ligado")
+            elif(aciona == 2):
+                with self._lock:
+                    self._modbusCliente.write_single_register(self.addr,aciona)
+                print("Motor resetado")
+            
     
-    def est_motor(self):
+    def est_motor(self,es):
+        self.estado_motor = es
         return self.estado_motor
+    
+    def acionamento_imagem(self):
+        if(self.estado_motor == True):
+            self.ler_motor()
+            with self._lock:
+                self._modbusCliente.write_single_register(self.addr,0)           
+            print("Motor desligado")
+        elif(self.estado_motor == False):
+            self.ler_motor()
+            with self._lock:
+                self._modbusCliente.write_single_register(self.addr,1) 
+                
+    
+    def ler_motor(self):
+        with self._lock:
+            cond = self._modbusCliente.read_holding_registers(1324,1)[0]
+        if (cond == 1):
+            self.addr = 1316
+        elif (cond == 2):
+            self.addr = 1312
+        elif (cond == 3):
+            self.addr = 1319
+            
+
 
     def rampa_acel(self, acel):
+        print(acel)
         with self._lock:
             self._modbusCliente.write_single_register(1317,acel)
     
