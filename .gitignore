@@ -1,5 +1,6 @@
 .supervisorio
 ISA101
+__pycache__/
 salvamento
 opteste.txt
 

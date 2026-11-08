@@ -394,7 +394,7 @@ class MainWidgetApp(MDApp):
         self.theme_cls.theme_style = 'Light'
         self.theme_cls.primary_palette = 'Gray'
         self.theme_cls.primary_hue = "500"
-        self.widget = MainWidget(scan_timemain = 1000, ipmain='127.0.0.1', portamain=502) #Mesmos nome dos get
+        self.widget = MainWidget(scan_timemain = 1000, ipmain='10.15.30.181', portamain=502) #Mesmos nome dos get
         Window.maximize()        
         return self.widget
     
